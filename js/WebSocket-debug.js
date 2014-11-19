@@ -3688,6 +3688,428 @@ var postMessage0 =
 
 
 
+/**
+ * @private
+ */
+var Logger = function(name) {
+    this._name = name;
+    this._level = Logger.Level.INFO; // default to INFO 
+};
+        
+(function() {
+    /**
+     * Logging levels available. Matches java.util.logging.Level.
+     * See http://java.sun.com/javase/6/docs/api/java/util/logging/Level.html
+     * @ignore
+     */
+    Logger.Level = {
+        OFF:8,
+        SEVERE:7,
+        WARNING:6,
+        INFO:5,
+        CONFIG:4,
+        FINE:3,
+        FINER:2,
+        FINEST:1,
+        ALL:0
+    };
+    
+    // Load the logging configuration as specified by the kaazing:logging META tag
+    var logConfString;
+    var tags = document.getElementsByTagName("meta");
+    for(var i = 0; i < tags.length; i++) {
+        if (tags[i].name === 'kaazing:logging') {
+            logConfString = tags[i].content;
+            break;
+        }
+    }
+    Logger._logConf = {};
+    if (logConfString) {
+        var tokens = logConfString.split(',');
+        for (var i = 0; i < tokens.length; i++) {
+            var logConfItems = tokens[i].split('=');
+            Logger._logConf[logConfItems[0]] = logConfItems[1];
+        }
+    }
+    
+    var loggers = {};
+    
+    Logger.getLogger = function(name) {
+        var logger = loggers[name];
+        if (logger === undefined) {
+            logger = new Logger(name);
+            loggers[name] = logger;
+        }
+        return logger; 
+    }
+    
+    var $prototype = Logger.prototype;
+    
+    /**
+     * Set the log level specifying which message levels will be logged.
+     * @param level the log level
+     * @ignore
+     * @memberOf Logger
+     */
+    $prototype.setLevel = function(level) {
+        if (level && level >= Logger.Level.ALL && level <= Logger.Level.OFF) {
+            this._level = level;
+        }
+    }    
+
+    /**
+     * Check if a message of the given level would actually be logged.
+     * @param level the log level
+     * @return whether loggable
+     * @ignore
+     * @memberOf Logger
+     */
+    $prototype.isLoggable = function(level) {
+        for (var logKey in Logger._logConf) {
+            if (Logger._logConf.hasOwnProperty(logKey)) {
+                if (this._name.match(logKey)) {
+                    var logVal = Logger._logConf[logKey];
+                    if (logVal) {
+                        return (Logger.Level[logVal] <= level);
+                    }
+                }
+            }
+        }
+        return (this._level <= level);
+    }
+    
+    var noop = function() {};
+    
+    var delegates = {};
+    delegates[Logger.Level.OFF] = noop;
+    delegates[Logger.Level.SEVERE] = (window.console) ? (console.error || console.log || noop) : noop;
+    delegates[Logger.Level.WARNING] = (window.console) ? (console.warn || console.log || noop) : noop;
+    delegates[Logger.Level.INFO] = (window.console) ? (console.info || console.log || noop) : noop;
+    delegates[Logger.Level.CONFIG] = (window.console) ? (console.info || console.log || noop) : noop;
+    delegates[Logger.Level.FINE] = (window.console) ? (console.debug || console.log || noop) : noop;
+    delegates[Logger.Level.FINER] = (window.console) ? (console.debug || console.log || noop) : noop;
+    delegates[Logger.Level.FINEST] = (window.console) ? (console.debug || console.log || noop) : noop;
+    delegates[Logger.Level.ALL] = (window.console) ? (console.log || noop) : noop;
+    
+    $prototype.config = function(source, message) {
+        this.log(Logger.Level.CONFIG, source, message);
+    };
+
+    $prototype.entering = function(source, name, params) {
+        if (this.isLoggable(Logger.Level.FINER)) {
+            if (browser == 'chrome' || browser == 'safari') {
+                source = console;
+            }
+            var delegate = delegates[Logger.Level.FINER];
+            if (params) {
+                if (typeof(delegate) == 'object') {
+                    delegate('ENTRY ' + name, params);
+                } else {
+                    delegate.call(source, 'ENTRY ' + name, params);
+                }
+            } else {
+                if (typeof(delegate) == 'object') {
+                    delegate('ENTRY ' + name);
+                } else {
+                    delegate.call(source, 'ENTRY ' + name);
+                }
+            }
+        }  
+    };
+
+    $prototype.exiting = function(source, name, value) {
+        if (this.isLoggable(Logger.Level.FINER)) {
+            var delegate = delegates[Logger.Level.FINER];
+            if (browser == 'chrome' || browser == 'safari') {
+                source = console;
+            }
+            if (value) {
+                if (typeof(delegate) == 'object') {
+                    delegate('RETURN ' + name, value);
+                } else {
+                    delegate.call(source, 'RETURN ' + name, value);
+                }
+            } else {
+                if (typeof(delegate) == 'object') {
+                    delegate('RETURN ' + name);
+                } else {
+                    delegate.call(source, 'RETURN ' + name);
+                }
+            }
+        }  
+    };
+    
+    $prototype.fine = function(source, message) {
+        this.log(Logger.Level.FINE, source, message);
+    };
+
+    $prototype.finer = function(source, message) {
+        this.log(Logger.Level.FINER, source, message);
+    };
+
+    $prototype.finest = function(source, message) {
+        this.log(Logger.Level.FINEST, source, message);
+    };
+
+    $prototype.info = function(source, message) {
+        this.log(Logger.Level.INFO, source, message);
+    };
+
+    $prototype.log = function(level, source, message) {
+        if (this.isLoggable(level)) {
+            var delegate = delegates[level];
+            if (browser == 'chrome' || browser == 'safari') {
+                source = console;
+            }
+            if (typeof(delegate) == 'object') {
+                delegate(message);
+            } else {
+                delegate.call(source, message);
+            }
+        }  
+    };
+
+    $prototype.severe = function(source, message) {
+        this.log(Logger.Level.SEVERE, source, message);
+    };
+
+    $prototype.warning = function(source, message) {
+        this.log(Logger.Level.WARNING, source, message);
+    };
+
+})();
+    
+
+
+
+;;;var ULOG = Logger.getLogger('com.kaazing.gateway.client.loader.Utils');
+    
+/**
+ * Given a key, returns the value of the content attribute of the first
+ * meta tag with a name attribute matching that key.
+ *
+ * @internal
+ * @ignore
+ */
+var getMetaValue = function(key) {
+    ;;;ULOG.entering(this, 'Utils.getMetaValue', key);
+    // get all meta tags
+    var tags = document.getElementsByTagName("meta");
+
+    // find tag with name matching key
+    for(var i=0; i < tags.length; i++) {
+        if (tags[i].name === key) {
+            var v = tags[i].content;
+            ;;;ULOG.exiting(this, 'Utils.getMetaValue', v);
+            return v;
+        }
+    }
+    ;;;ULOG.exiting(this, 'Utils.getMetaValue');
+}
+
+var arrayCopy = function(array) {
+    ;;;ULOG.entering(this, 'Utils.arrayCopy', array);
+    var newArray = [];
+    for (var i=0; i<array.length; i++) {
+        newArray.push(array[i]);
+    }
+    return newArray;
+}
+
+var arrayFilter = function(array, callback) {
+    ;;;ULOG.entering(this, 'Utils.arrayFilter', {'array':array, 'callback':callback});
+    var newArray = [];
+    for (var i=0; i<array.length; i++) {
+        var elt = array[i];
+        if(callback(elt)) {
+            newArray.push(array[i]);
+        }
+    }
+    return newArray;
+}
+
+var indexOf = function(array, searchElement) {
+    ;;;ULOG.entering(this, 'Utils.indexOf', {'array':array, 'searchElement':searchElement});
+    for (var i=0; i<array.length; i++) {
+        if (array[i] == searchElement) {
+            ;;;ULOG.exiting(this, 'Utils.indexOf', i);
+            return i;
+        }
+    }
+    ;;;ULOG.exiting(this, 'Utils.indexOf', -1);
+    return -1;
+}
+
+/**
+ * Given a byte string, decode as a UTF-8 string
+ * @private
+ * @ignore
+ */
+var decodeByteString = function(s) {
+    ;;;ULOG.entering(this, 'Utils.decodeByteString', s);
+    var a = [];
+    for (var i=0; i<s.length; i++) {
+        a.push(s.charCodeAt(i) & 0xFF);
+    }
+    var buf = new $rootModule.ByteBuffer(a);
+    var v = getStringUnterminated(buf, Charset.UTF8);
+    ;;;ULOG.exiting(this, 'Utils.decodeByteString', v);
+    return v;
+}
+
+/**
+ * Given an arrayBuffer, decode as a UTF-8 string
+ * @private
+ * @ignore
+ */
+var decodeArrayBuffer = function(array) {
+    ;;;ULOG.entering(this, 'Utils.decodeArrayBuffer', array);
+    var buf = new Uint8Array(array);
+    var a = [];
+    for (var i=0; i<buf.length; i++) {
+        a.push(buf[i]);
+    }
+    var buf = new $rootModule.ByteBuffer(a);
+    var s = getStringUnterminated(buf, Charset.UTF8);
+    ;;;ULOG.exiting(this, 'Utils.decodeArrayBuffer', s);
+    return s;
+}
+
+/**
+ * Given an arrayBuffer, decode as a $rootModule.ByteBuffer
+ * @private
+ * @ignore
+ */
+var decodeArrayBuffer2ByteBuffer = function(array) {
+    ;;;ULOG.entering(this, 'Utils.decodeArrayBuffer2ByteBuffer');
+    var buf = new Uint8Array(array);
+    var a = [];
+    for (var i=0; i<buf.length; i++) {
+        a.push(buf[i]);
+    }
+    ;;;ULOG.exiting(this, 'Utils.decodeArrayBuffer2ByteBuffer');
+    return new $rootModule.ByteBuffer(a);
+}
+
+var ESCAPE_CHAR = String.fromCharCode(0x7F);
+var NULL = String.fromCharCode(0);
+var LINEFEED = "\n";
+
+/**
+ * Convert a ByteBuffer into an escaped and encoded string
+ * @private
+ * @ignore
+ */
+var encodeEscapedByteString = function(buf) {
+    ;;;ULOG.entering(this, 'Utils.encodeEscapedByte', buf);
+    var a = [];
+    while(buf.remaining()) {
+        var n = buf.getUnsigned();
+        var chr = String.fromCharCode(n);
+        switch(chr) {
+            case ESCAPE_CHAR:
+                a.push(ESCAPE_CHAR);
+                a.push(ESCAPE_CHAR);
+                break;
+            case NULL:
+                a.push(ESCAPE_CHAR);
+                a.push("0");
+                break;
+            case LINEFEED:
+                a.push(ESCAPE_CHAR);
+                a.push("n");
+                break;
+            default:
+                a.push(chr);
+        }
+
+    }
+    var v = a.join("");
+    ;;;ULOG.exiting(this, 'Utils.encodeEscapedBytes', v);
+    return v;
+}
+
+/**
+ * Convert a ByteBuffer into a properly escaped and encoded string
+ * @private
+ * @ignore
+ */
+var encodeByteString = function(buf, requiresEscaping) {
+    ;;;ULOG.entering(this, 'Utils.encodeByteString', {'buf':buf, 'requiresEscaping': requiresEscaping});
+    if (requiresEscaping) {
+        return encodeEscapedByteString(buf);
+    } else {
+    	// obtain the array without copying if possible
+		var array = buf.array;
+		var bytes = (buf.position == 0 && buf.limit == array.length) ? array : buf.getBytes(buf.remaining());
+
+		// update the array to use unsigned values and \u0100 for \u0000 (due to XDR bug)
+        var sendAsUTF8 = !(XMLHttpRequest.prototype.sendAsBinary);
+		for (var i=bytes.length-1; i >= 0; i--) {
+		    var element = bytes[i];
+		    if (element == 0 && sendAsUTF8) {
+		        bytes[i] = 0x100;
+		    }
+		    else if (element < 0) {
+		        bytes[i] = element & 0xff;
+		    }
+		}
+
+        var encodedLength = 0;
+        var partsOfByteString = [];
+
+        do {
+            var amountToEncode = Math.min(bytes.length - encodedLength, 10000);
+            partOfBytes = bytes.slice(encodedLength, encodedLength + amountToEncode);
+            encodedLength += amountToEncode;
+		    partsOfByteString.push(String.fromCharCode.apply(null, partOfBytes));
+        } while ( encodedLength < bytes.length);
+
+		// convert UTF-8 char codes to String
+        var byteString = partsOfByteString.join("");	
+
+		// restore original byte values for \u0000
+		if (bytes === array) {
+			for (var i=bytes.length-1; i >= 0; i--) {
+			    var element = bytes[i];
+			    if (element == 0x100) {
+			        bytes[i] = 0;
+			    }
+			}
+		}
+
+        ;;;ULOG.exiting(this, 'Utils.encodeByteString', byteString);
+        return byteString;
+    }
+}
+
+/**
+ * UTF8 Decode an entire ByteBuffer (ignoring "null termination" because 0 is a
+ *      valid character code!
+ * @private
+ * @ignore
+ */
+var getStringUnterminated = function(buf, cs) {
+  var newLimit = buf.position;
+  var oldLimit = buf.limit;
+  var array = buf.array;
+  while (newLimit < oldLimit) {
+    newLimit++;
+  }
+  try {
+      buf.limit = newLimit;
+      return cs.decode(buf);
+  }
+  finally {
+      if (newLimit != oldLimit) {
+          buf.limit = oldLimit;
+          buf.position = newLimit + 1;
+      }
+  }
+};
+
+
+
 
 /**
  * @ignore
@@ -4750,14 +5172,6 @@ Kaazing.Gateway.BlobUtils = Kaazing.BlobUtils;
 
 
 /**
- * @ignore
- */
-var LOADER_BASE_NAME = "WebSocket";
-
-
-
-
-/**
  * It is necessary to save a reference to window.WebSocket before defining
  * our own window.WebSocket in order to be able to construct native WebSockets
  *
@@ -5059,841 +5473,6 @@ var WebSocketNativeProxy = (function() {
     }
     return WebSocketNativeProxy;
 })();
-
-
-
-
-/**
- * WebSocketEmulatedFlashProxy provides a JavaScript WebSocket interface from the flash impl
- *
- * @private
- */
-var WebSocketEmulatedFlashProxy = (function() {
-    ;;;var WSEFPLOG = Logger.getLogger('WebSocketEmulatedFlashProxy');
-    
-    var WebSocketEmulatedFlashProxy = function() {
-        this.parent;
-        this._listener;
-    };
-
-    var $prototype = WebSocketEmulatedFlashProxy.prototype;
-
-    $prototype.connect = function(location, protocol) {
-        ;;;WSEFPLOG.entering(this, 'WebSocketEmulatedFlashProxy.<init>', location);
-        this.URL = location;
-        // key is returned back from flash
-        //console.log("js is registering a web socket for ", location)
-        try {
-            registerWebSocket(this, location, protocol);
-        } catch(e) {
-            ;;;WSEFPLOG.severe(this, 'WebSocketEmulatedFlashProxy.<init> ' + e);
-            doError(this, e);
-        }
-        this.constructor = WebSocketEmulatedFlashProxy;
-        ;;;WSEFPLOG.exiting(this, 'WebSocketEmulatedFlashProxy.<init>');
-    };
-
-    $prototype.setListener = function(listener) {
-			this._listener = listener;
-	};
-    
-    // add the flash hook to the package private WebSocketEmulatedFlashProxy object
-    WebSocketEmulatedFlashProxy._flashBridge = {};
-    WebSocketEmulatedFlashProxy._flashBridge.readyWaitQueue = [];
-    WebSocketEmulatedFlashProxy._flashBridge.failWaitQueue = [];
-    WebSocketEmulatedFlashProxy._flashBridge.flashHasLoaded = false;
-    WebSocketEmulatedFlashProxy._flashBridge.flashHasFailed = false;
-
-    $prototype.URL = "";
-    $prototype.readyState = 0;
-    $prototype.bufferedAmount = 0;
-    
-    //listener functions
-    $prototype.connectionOpened = function(channel, headers) {
-        var headers = headers.split("\n");
-        for (var i = 0; i < headers.length; i++) {
-            var header = headers[i].split(":");
-            channel.responseHeaders[header[0]] = header[1];
-        }
-        this._listener.connectionOpened(channel, "");
-    };
-    
-    $prototype.connectionClosed = function(channel, wasClean, code, reason) {
-        this._listener.connectionClosed(channel, wasClean, code, reason);
-    };
-    
-    $prototype.connectionFailed = function(channel) {
-        this._listener.connectionFailed(channel);
-    };
-    
-    $prototype.binaryMessageReceived = function(channel, data) {
-        this._listener.binaryMessageReceived(channel, data);
-    };
-    
-    $prototype.textMessageReceived = function(channel, s) {
-        this._listener.textMessageReceived(channel, s);
-    };
-    
-    $prototype.redirected = function(channel, location) {
-        this._listener.redirected(channel, location);
-    };
-    
-    $prototype.authenticationRequested = function(channel, location, challenge) {
-        this._listener.authenticationRequested(channel, location, challenge);
-    };
-
-    $prototype.send = function(data) {
-        ;;;WSEFPLOG.entering(this, 'WebSocketEmulatedFlashProxy.send', data);
-        switch (this.readyState) {
-            case 0:
-                ;;;WSEFPLOG.severe(this, 'WebSocketEmulatedFlashProxy.send: readyState is 0');
-                throw new Error("INVALID_STATE_ERR");
-                break;
-            case 1:
-                //console.log("trying to send", data)
-                if (data === null) {
-                    ;;;WSEFPLOG.severe(this, 'WebSocketEmulatedFlashProxy.send: Data is null');
-                    throw new Error("data is null");
-                }
-                if (typeof(data) == "string") {
-                    // send string message
-                    WebSocketEmulatedFlashProxy._flashBridge.sendText(this._instanceId, data);
-                } else if (data.constructor == $rootModule.ByteBuffer) {
-                    var byteString;
-                    var a = [];
-                    while (data.remaining()) {
-                    	a.push(String.fromCharCode(data.get()));
-                    }
-                    var byteString = a.join("");
-                    WebSocketEmulatedFlashProxy._flashBridge.sendByteString(this._instanceId, byteString);
-                } else if (data.byteLength) {//ByteArray
-                	var byteString;
-                    var a = [];
-                    var tArray = new DataView(data);
-                    for (var i = 0; i < data.byteLength; i++) {
-                    	a.push(String.fromCharCode(tArray.getUint8(i)));
-                    }
-                    var byteString = a.join("");
-                    WebSocketEmulatedFlashProxy._flashBridge.sendByteString(this._instanceId, byteString);
-                } else if (data.size) {
-                	var $this = this;
-                	var cb = function(result) {
-                    	WebSocketEmulatedFlashProxy._flashBridge.sendByteString($this._instanceId, result);
-                    };
-                    BlobUtils.asBinaryString(cb, data);
-                    return;
-                } else {
-                    ;;;WSEFPLOG.severe(this, 'WebSocketEmulatedFlashProxy.send: Data is on invalid type ' + typeof(data));
-                    throw new Error("Invalid type");
-                }
-
-                updateBufferedAmount(this);
-                return true;
-                break;
-            case 2:
-                return false;
-                break;
-            default:
-                ;;;WSEFPLOG.severe(this, 'WebSocketEmulatedFlashProxy.send: Invalid readyState ' + this.readyState);
-                throw new Error("INVALID_STATE_ERR");
-        }
-    };
-
-    $prototype.close = function(code, reason) {
-        ;;;WSEFPLOG.entering(this, 'WebSocketEmulatedFlashProxy.close');
-        switch (this.readyState) {
-            case 0:
-            case 1:
-                WebSocketEmulatedFlashProxy._flashBridge.disconnect(this._instanceId, code, reason);
-                break;
-        }
-    };
-
-    $prototype.disconnect = $prototype.close;
-    
-    var updateBufferedAmount = function($this) {
-        ;;;WSEFPLOG.entering(this, 'WebSocketEmulatedFlashProxy.updateBufferedAmount');
-        $this.bufferedAmount = WebSocketEmulatedFlashProxy._flashBridge.getBufferedAmount($this._instanceId);
-
-        if ($this.bufferedAmount != 0) {
-            setTimeout(function() {
-                updateBufferedAmount($this);
-            }, 1000);
-        }
-    }
-
-    var registerWebSocket = function($this, location, protocol) {
-        ;;;WSEFPLOG.entering(this, 'WebSocketEmulatedFlashProxy.registerWebSocket', location);
-        var handleReady = function(key, registry) {
-            registry[key] = $this;
-            $this._instanceId = key;
-        }
-
-        var handleError = function() {
-            doError($this);
-        }
-        var headers = [];
-        if ($this.parent.requestHeaders && $this.parent.requestHeaders.length > 0) {
-            for (var i = 0; i < $this.parent.requestHeaders.length; i++) {
-                headers .push($this.parent.requestHeaders[i].label + ":" + $this.parent.requestHeaders[i].value);
-            }
-        }
-        WebSocketEmulatedFlashProxy._flashBridge.registerWebSocketEmulated(location, headers.join("\n"), handleReady, handleError);
-    };
-
-    function doError($this, e) {
-        ;;;WSEFPLOG.entering(this, 'WebSocketEmulatedFlashProxy.doError', e);
-        setTimeout(function() {
-//                if($this.onerror) {
-//                    $this.onerror(e);
-//                }
-                $this._listener.connectionFailed($this.parent);
-            }, 0);
-    }
-
-   return WebSocketEmulatedFlashProxy;
-})();
-
-
-
-
-
-/**
- * WebSocketRtmpFlashProxy provides a JavaScript WebSocket interface from the flash impl
- *
- * @private
- */
-var WebSocketRtmpFlashProxy = (function() {
-    ;;;var WSEFPLOG = Logger.getLogger('WebSocketRtmpFlashProxy');
-    
-    var WebSocketRtmpFlashProxy = function() {
-        this.parent;
-        this._listener;
-    };
-
-    var $prototype = WebSocketRtmpFlashProxy.prototype;
-
-    $prototype.connect = function(location, protocol) {
-        ;;;WSEFPLOG.entering(this, 'WebSocketRtmpFlashProxy.<init>', location);
-        this.URL = location;
-        // key is returned back from flash
-        //console.log("js is registering a web socket for ", location)
-        try {
-            registerWebSocket(this, location, protocol);
-        } catch(e) {
-            ;;;WSEFPLOG.severe(this, 'WebSocketRtmpFlashProxy.<init> ' + e);
-            doError(this, e);
-        }
-        this.constructor = WebSocketRtmpFlashProxy;
-        ;;;WSEFPLOG.exiting(this, 'WebSocketRtmpFlashProxy.<init>');
-    };
-
-    $prototype.setListener = function(listener) {
-			this._listener = listener;
-	};
-    
-    // add the flash hook to the package private WebSocketRtmpFlashProxy object
-    WebSocketEmulatedFlashProxy._flashBridge = {};
-    WebSocketEmulatedFlashProxy._flashBridge.readyWaitQueue = [];
-    WebSocketEmulatedFlashProxy._flashBridge.failWaitQueue = [];
-    WebSocketEmulatedFlashProxy._flashBridge.flashHasLoaded = false;
-    WebSocketEmulatedFlashProxy._flashBridge.flashHasFailed = false;
-
-    $prototype.URL = "";
-    $prototype.readyState = 0;
-    $prototype.bufferedAmount = 0;
-    
-    //listener functions
-    $prototype.connectionOpened = function(channel, headers) {
-        var headers = headers.split("\n");
-        for (var i = 0; i < headers.length; i++) {
-            var header = headers[i].split(":");
-            channel.responseHeaders[header[0]] = header[1];
-        }
-        this._listener.connectionOpened(channel, "");
-    };
-    
-    $prototype.connectionClosed = function(channel, wasClean, code, reason) {
-        this._listener.connectionClosed(channel, wasClean, code, reason);
-    };
-    
-    $prototype.connectionFailed = function(channel) {
-        this._listener.connectionFailed(channel);
-    };
-    
-    $prototype.binaryMessageReceived = function(channel, data) {
-        this._listener.binaryMessageReceived(channel, data);
-    };
-    
-    $prototype.textMessageReceived = function(channel, s) {
-        this._listener.textMessageReceived(channel, s);
-    };
-    
-    $prototype.redirected = function(channel, location) {
-        this._listener.redirected(channel, location);
-    };
-    
-    $prototype.authenticationRequested = function(channel, location, challenge) {
-        this._listener.authenticationRequested(channel, location, challenge);
-    };
-
-    $prototype.send = function(data) {
-        ;;;WSEFPLOG.entering(this, 'WebSocketRtmpFlashProxy.send', data);
-        switch (this.readyState) {
-            case 0:
-                ;;;WSEFPLOG.severe(this, 'WebSocketRtmpFlashProxy.send: readyState is 0');
-                throw new Error("INVALID_STATE_ERR");
-                break;
-            case 1:
-                //console.log("trying to send", data)
-                if (data === null) {
-                    ;;;WSEFPLOG.severe(this, 'WebSocketRtmpFlashProxy.send: Data is null');
-                    throw new Error("data is null");
-                }
-                if (typeof(data) == "string") {
-                    // send string message
-                    WebSocketEmulatedFlashProxy._flashBridge.sendText(this._instanceId, data);
-                } else if (typeof(data.array) == "object") {
-                    var byteString;
-
-                    var a = [];
-                    var b;
-                    while (data.remaining()) {
-                        b = data.get();
-                        a.push(String.fromCharCode(b));
-                    }
-                    var byteString = a.join("");
-                    WebSocketEmulatedFlashProxy._flashBridge.sendByteString(this._instanceId, byteString);
-
-                    return;
-                } else {
-                    ;;;WSEFPLOG.severe(this, 'WebSocketRtmpFlashProxy.send: Data is on invalid type ' + typeof(data));
-                    throw new Error("Invalid type");
-                }
-
-
-
-                updateBufferedAmount(this);
-                return true;
-                break;
-            case 2:
-                return false;
-                break;
-            default:
-                ;;;WSEFPLOG.severe(this, 'WebSocketRtmpFlashProxy.send: Invalid readyState ' + this.readyState);
-                throw new Error("INVALID_STATE_ERR");
-        }
-    };
-
-    $prototype.close = function(code, reason) {
-        ;;;WSEFPLOG.entering(this, 'WebSocketRtmpFlashProxy.close');
-        switch (this.readyState) {
-            case 1:
-            case 2:
-                WebSocketEmulatedFlashProxy._flashBridge.disconnect(this._instanceId, code, reason);
-                break;
-        }
-    };
-
-    $prototype.disconnect = $prototype.close;
-    
-    var updateBufferedAmount = function($this) {
-        ;;;WSEFPLOG.entering(this, 'WebSocketRtmpFlashProxy.updateBufferedAmount');
-        $this.bufferedAmount = WebSocketEmulatedFlashProxy._flashBridge.getBufferedAmount($this._instanceId);
-
-        if ($this.bufferedAmount != 0) {
-            setTimeout(function() {
-                updateBufferedAmount($this);
-            }, 1000);
-        }
-    }
-
-    var registerWebSocket = function($this, location, protocol) {
-        ;;;WSEFPLOG.entering(this, 'WebSocketRtmpFlashProxy.registerWebSocket', location);
-        var handleReady = function(key, registry) {
-            registry[key] = $this;
-            $this._instanceId = key;
-        }
-
-        var handleError = function() {
-            doError($this);
-        }
-        var headers = [];
-        if ($this.parent.requestHeaders && $this.parent.requestHeaders.length > 0) {
-            for (var i = 0; i < $this.parent.requestHeaders.length; i++) {
-                headers .push($this.parent.requestHeaders[i].label + ":" + $this.parent.requestHeaders[i].value);
-            }
-        }
-        WebSocketEmulatedFlashProxy._flashBridge.registerWebSocketRtmp(location, headers.join("\n"), handleReady, handleError);
-    };
-
-    function doError($this, e) {
-        ;;;WSEFPLOG.entering(this, 'WebSocketRtmpFlashProxy.doError', e);
-        setTimeout(function() {
-//                if($this.onerror) {
-//                    $this.onerror(e);
-//                }
-                $this._listener.connectionFailed($this.parent);
-            }, 0);
-    }
-
-   return WebSocketRtmpFlashProxy;
-})();
-
-
-
-
-
-(function($rootModule) {
-;;;var FBLOG = Logger.getLogger('org.kaazing.gateway.client.loader.FlashBridge');
-	
-//WebSocket flash bridge (JS->flash side)
-//Functions for communicating across the bridge
-var registry = {};
-
-WebSocketEmulatedFlashProxy._flashBridge.registerWebSocketEmulated = function(location, protocol, callback, errback) {
-    ;;;FBLOG.entering(this, 'WebSocketEmulatedFlashProxy._flashBridge.registerWebSocketEmulated', {'location':location, 'callback':callback, 'errback':errback});
-    var readyHandler = function() {
-        var key = WebSocketEmulatedFlashProxy._flashBridge.doRegisterWebSocketEmulated(location, protocol);
-        callback(key, registry);
-    }
-    if (WebSocketEmulatedFlashProxy._flashBridge.flashHasLoaded) {
-        if (WebSocketEmulatedFlashProxy._flashBridge.flashHasFailed) {
-            errback();
-        } else {
-            readyHandler();
-        }
-    } else {
-        // defer registration if flash has not yet loaded
-        this.readyWaitQueue.push(readyHandler);
-        this.failWaitQueue.push(errback);
-    }
-    ;;;FBLOG.exiting(this, 'WebSocketEmulatedFlashProxy._flashBridge.registerWebSocketEmulated');
-};
-
-WebSocketEmulatedFlashProxy._flashBridge.doRegisterWebSocketEmulated = function(location, headers) {
-    ;;;FBLOG.entering(this, 'WebSocketEmulatedFlashProxy._flashBridge.doRegisterWebSocketEmulated', {'location':location, 'headers':headers});
-    var key = WebSocketEmulatedFlashProxy._flashBridge.elt.registerWebSocketEmulated(location, headers);
-    ;;;FBLOG.exiting(this, 'WebSocketEmulatedFlashProxy._flashBridge.doRegisterWebSocketEmulated', key);
-    return key;
-};
-
-WebSocketEmulatedFlashProxy._flashBridge.registerWebSocketRtmp = function(location, protocol, callback, errback) {
-    ;;;FBLOG.entering(this, 'WebSocketEmulatedFlashProxy._flashBridge.registerWebSocketRtmp', {'location':location, 'callback':callback, 'errback':errback});
-    var readyHandler = function() {
-        var key = WebSocketEmulatedFlashProxy._flashBridge.doRegisterWebSocketRtmp(location, protocol);
-        callback(key, registry);
-    }
-    if (WebSocketEmulatedFlashProxy._flashBridge.flashHasLoaded) {
-        if (WebSocketEmulatedFlashProxy._flashBridge.flashHasFailed) {
-            errback();
-        } else {
-            readyHandler();
-        }
-    } else {
-        // defer registration if flash has not yet loaded
-        this.readyWaitQueue.push(readyHandler);
-        this.failWaitQueue.push(errback);
-    }
-    ;;;FBLOG.exiting(this, 'WebSocketEmulatedFlashProxy._flashBridge.registerWebSocketEmulated');
-};
-
-WebSocketEmulatedFlashProxy._flashBridge.doRegisterWebSocketRtmp = function(location, protocol) {
-    ;;;FBLOG.entering(this, 'WebSocketEmulatedFlashProxy._flashBridge.doRegisterWebSocketRtmp', {'location':location, 'protocol':protocol});
-    var key = WebSocketEmulatedFlashProxy._flashBridge.elt.registerWebSocketRtmp(location, protocol);
-    ;;;FBLOG.exiting(this, 'WebSocketEmulatedFlashProxy._flashBridge.doRegisterWebSocketRtmp', key);
-    return key;
-};
-
-WebSocketEmulatedFlashProxy._flashBridge.onready = function() {
-    ;;;FBLOG.entering(this, 'WebSocketEmulatedFlashProxy._flashBridge.onready');
-    var waitQueue = WebSocketEmulatedFlashProxy._flashBridge.readyWaitQueue;
-    for (var i=0; i<waitQueue.length; i++) {
-        var readyCallback = waitQueue[i];
-        readyCallback();
-    }
-    ;;;FBLOG.exiting(this, 'WebSocketEmulatedFlashProxy._flashBridge.onready');
-};
-
-WebSocketEmulatedFlashProxy._flashBridge.onfail = function() {
-    ;;;FBLOG.entering(this, 'WebSocketEmulatedFlashProxy._flashBridge.onfail');
-    var waitQueue = WebSocketEmulatedFlashProxy._flashBridge.failWaitQueue;
-    for (var i=0; i<waitQueue.length; i++) {
-        var errback = waitQueue[i];
-        errback();
-    }
-    ;;;FBLOG.exiting(this, 'WebSocketEmulatedFlashProxy._flashBridge.onfail');
-};
-
-
-//WebSocketEmulatedFlashProxy._flashBridge.doOpen = function(key) {
-//    ;;;FBLOG.entering(this, 'WebSocketEmulatedFlashProxy._flashBridge.doOpen', key);
-//    registry[key].readyState = 1;
-//    registry[key].onopen();
-//    killLoadingBar();
-//    ;;;FBLOG.exiting(this, 'WebSocketEmulatedFlashProxy._flashBridge.doOpen');
-//};
-//
-//WebSocketEmulatedFlashProxy._flashBridge.doClose = function(key) {
-//    ;;;FBLOG.entering(this, 'WebSocketEmulatedFlashProxy._flashBridge.doClose', key);
-//    registry[key].readyState = 2;
-//    registry[key].onclose();
-//    ;;;FBLOG.exiting(this, 'WebSocketEmulatedFlashProxy._flashBridge.doClose');
-//};
-//
-//WebSocketEmulatedFlashProxy._flashBridge.doError = function(key) {
-//    ;;;FBLOG.entering(this, 'WebSocketEmulatedFlashProxy._flashBridge.doError', key);
-//    registry[key].onerror();
-//    ;;;FBLOG.exiting(this, 'WebSocketEmulatedFlashProxy._flashBridge.doError');
-//};
-
-//WebSocketEmulatedFlashProxy._flashBridge.doMessage = function(key, data) {
-//    ;;;FBLOG.entering(this, 'WebSocketEmulatedFlashProxy._flashBridge.doMessage', {'key':key, 'data':data});
-//    var socket = registry[key];
-//
-//    if (socket.readyState == 1) {
-//        var e;
-//        try {
-//            e = document.createEvent("Events");
-//            e.initEvent("message", true, true);
-//        }
-//        catch (ie) {
-//            ;;;FBLOG.error(this, 'WebSocketEmulatedFlashProxy._flashBridge.doMessage ' + ie);
-//            e = { type: "message", bubbles: true, cancelable:true };
-//        }
-//
-//        e.data = unescape(data);
-//        e.decoder = decodeByteString;
-//        e.origin = document.domain;
-//        e.source = null;
-//
-//        socket.onmessage(e);
-//    }
-//    ;;;FBLOG.exiting(this, 'WebSocketEmulatedFlashProxy._flashBridge.doMessage');
-//};
-
-WebSocketEmulatedFlashProxy._flashBridge.connectionOpened = function(key, headers) {
-    ;;;FBLOG.entering(this, 'WebSocketEmulatedFlashProxy._flashBridge.connectionOpened', key);
-    registry[key].readyState = 1;
-    registry[key].connectionOpened(registry[key].parent, headers);
-    killLoadingBar();
-    ;;;FBLOG.exiting(this, 'WebSocketEmulatedFlashProxy._flashBridge.connectionOpened');
-};
-
-WebSocketEmulatedFlashProxy._flashBridge.connectionClosed = function(key, wasClean, code, reason) {
-    ;;;FBLOG.entering(this, 'WebSocketEmulatedFlashProxy._flashBridge.connectionClosed', key);
-    registry[key].readyState = 2;
-    registry[key].connectionClosed(registry[key].parent, wasClean, code, reason);
-    ;;;FBLOG.exiting(this, 'WebSocketEmulatedFlashProxy._flashBridge.connectionClosed');
-};
-
-WebSocketEmulatedFlashProxy._flashBridge.connectionFailed = function(key) {
-    ;;;FBLOG.entering(this, 'WebSocketEmulatedFlashProxy._flashBridge.connectionFailed', key);
-    registry[key].connectionFailed(registry[key].parent);
-    ;;;FBLOG.exiting(this, 'WebSocketEmulatedFlashProxy._flashBridge.connectionFailed');
-};
-
-WebSocketEmulatedFlashProxy._flashBridge.binaryMessageReceived = function(key, data) {
-    ;;;FBLOG.entering(this, 'WebSocketEmulatedFlashProxy._flashBridge.binaryMessageReceived', {'key':key, 'data':data});
-    var proxy = registry[key];
-
-    if (proxy.readyState == 1) {
-        //data = unescape(data);
-        var	buf = $rootModule.ByteBuffer.allocate(data.length); 
-		for(var i = 0; i < data.length; i++) {
-            buf.put(data[i])
-        }
-		buf.flip();
-        proxy.binaryMessageReceived(proxy.parent, buf);
-    }
-    ;;;FBLOG.exiting(this, 'WebSocketEmulatedFlashProxy._flashBridge.binaryMessageReceived');
-};
-
-WebSocketEmulatedFlashProxy._flashBridge.textMessageReceived = function(key, data) {
-    ;;;FBLOG.entering(this, 'WebSocketEmulatedFlashProxy._flashBridge.textMessageReceived', {'key':key, 'data':data});
-    var proxy = registry[key];
-
-    if (proxy.readyState == 1) {
-        proxy.textMessageReceived(proxy.parent, unescape(data));
-    }
-    ;;;FBLOG.exiting(this, 'WebSocketEmulatedFlashProxy._flashBridge.textMessageReceived');
-};
-
-WebSocketEmulatedFlashProxy._flashBridge.redirected = function(key, location) {
-    ;;;FBLOG.entering(this, 'WebSocketEmulatedFlashProxy._flashBridge.redirected', {'key':key, 'data':location});
-    var proxy = registry[key];
-    proxy.redirected(proxy.parent, location);
-    ;;;FBLOG.exiting(this, 'WebSocketEmulatedFlashProxy._flashBridge.redirected');
-};
-
-WebSocketEmulatedFlashProxy._flashBridge.authenticationRequested = function(key, location, challenge) {
-    ;;;FBLOG.entering(this, 'WebSocketEmulatedFlashProxy._flashBridge.authenticationRequested', {'key':key, 'data':location});
-    var proxy = registry[key];
-    proxy.authenticationRequested(proxy.parent, location, challenge);
-    ;;;FBLOG.exiting(this, 'WebSocketEmulatedFlashProxy._flashBridge.authenticationRequested');
-};
-
-var killLoadingBar = function() {
-    ;;;FBLOG.entering(this, 'WebSocketEmulatedFlashProxy.killLoadingBar');
-    if (browser === "firefox") {
-        var e = document.createElement("iframe")
-        e.style.display = "none"
-        document.body.appendChild(e)
-        document.body.removeChild(e)
-    }
-}
-
-WebSocketEmulatedFlashProxy._flashBridge.sendText = function(key, message) {
-    ;;;FBLOG.entering(this, 'WebSocketEmulatedFlashProxy._flashBridge.sendText', {'key':key, 'message':message});
-    //this.elt.wsSend(key, escape(message));
-    this.elt.processTextMessage(key, escape(message));
-    setTimeout(killLoadingBar,200);
-};
-
-WebSocketEmulatedFlashProxy._flashBridge.sendByteString = function(key, message) {
-    ;;;FBLOG.entering(this, 'WebSocketEmulatedFlashProxy._flashBridge.sendByteString', {'key':key, 'message':message});
-    //this.elt.wsSendByteString(key, escape(message));
-    this.elt.processBinaryMessage(key, escape(message));
-    setTimeout(killLoadingBar,200);
-};
-
-
-WebSocketEmulatedFlashProxy._flashBridge.disconnect = function(key, code, reason) {
-    ;;;FBLOG.entering(this, 'WebSocketEmulatedFlashProxy._flashBridge.disconnect', key);
-    //this.elt.wsDisconnect(key);
-    this.elt.processClose(key, code, reason);
-};
-
-WebSocketEmulatedFlashProxy._flashBridge.getBufferedAmount = function(key) {
-    ;;;FBLOG.entering(this, 'WebSocketEmulatedFlashProxy._flashBridge.getBufferedAmount', key);
-    var v = this.elt.getBufferedAmount(key);
-    ;;;FBLOG.exiting(this, 'WebSocketEmulatedFlashProxy._flashBridge.getBufferedAmount', v);
-    return v;
-}
-
-})(Kaazing);
-
-
-
-
-
-// This closure ends in the kickstart files
-(function() {
-
-var ___Loader = function(BASE_NAME) {
-    var self = this;
-
-    // Now using a longer timeout (3s) as Firefox fails too quickly
-    // Flash loads properly when loading is completed, even if flash:wse
-    // connections have already started processing
-    var FLASH_LOAD_TIMEOUT = 3000;
-    var ID = "Loader"; // needed by IE to reaquire live element?
-
-    var ie = false;
-    var flash_timer = -1;
-    self.elt = null;
-
-    /*
-     * URL detection from included scripts (relative or absolute) 
-     */
-    var getBaseUrl = function() {
-        var exp = new RegExp(".*" + BASE_NAME + ".*.js$");
-        var scripts = document.getElementsByTagName("script");
-        for (var i=0; i<scripts.length; i++) {
-            if (scripts[i].src) {
-                var name = (scripts[i].src).match(exp);
-                if (name) {
-                    name = name.pop();
-                    var parts = name.split("/");
-
-                    // remove script name
-                    parts.pop();
-
-		    if (parts.length > 0) {
-                        // both relative and absolute urls taken from the
-                        // script.src will be valid src attributes for the new
-                        // script elements created to fetch the impl javascript
-                        // and flash
-                        return parts.join("/") + "/";
-		    }
-                    else {
-                        // Relative from current location (same directory)
-                        return "";
-                    }
-                }
-            }
-        }
-    };
-
-    var baseUrl = getBaseUrl();
-    var SWF_URL = baseUrl + "Loader.swf";
-
-    // Flash detection, injection, and handshake all starts here.
-    // The loader checks if 1) there is a meta tag for kaazing:upgrade content="none"
-    // or 2) there is no flash player version 9 or greater available. If either
-    // of these is true, the flash loading is skipped and the JavaScript fallback
-    // occurs immediately.
-    self.loader = function() {
-        var upgrade = "flash";
-        var tags = document.getElementsByTagName("meta");
-        for(var i=0; i < tags.length; i++) {
-            if (tags[i].name === "kaazing:upgrade") {
-                upgrade = tags[i].content;
-            }
-        }
-        // Detect flash player plugin and browser family
-        if (upgrade != "flash" || !hasMinimumFlashVersion([9,0,115])) {
-            failFlash();
-        } else {
-            flash_timer = setTimeout(failFlash, FLASH_LOAD_TIMEOUT);
-            inject_flash();
-        }
-    };
-
-    // clearFlashTimer is called by flash to cancel the fallback timer
-    self.clearFlashTimer = function() {
-        clearTimeout(flash_timer);
-        flash_timer = "cleared";
-
-        // without setTimeout, we are creating a cycle back into Flash plugin
-        // which causes a problem on Internet Explorer
-        setTimeout(function() {
-            startFlash(self.elt.handshake(BASE_NAME));
-        }, 0);
-    };
-    
-    var startFlash = function(handshakeToken) {
-        if (handshakeToken) {
-            WebSocketEmulatedFlashProxy._flashBridge.flashHasLoaded = true;
-            WebSocketEmulatedFlashProxy._flashBridge.elt = self.elt;
-            // alert waiting sockets that the flash impl has loaded
-            WebSocketEmulatedFlashProxy._flashBridge.onready();
-        } else {
-            failFlash();
-        }
-
-        window.___Loader = undefined;
-    }
-
-    var failFlash = function() {
-        WebSocketEmulatedFlashProxy._flashBridge.flashHasLoaded = true;
-        WebSocketEmulatedFlashProxy._flashBridge.flashHasFailed = true;
-        // alert waiting sockets that the flash impl has failed to load
-        WebSocketEmulatedFlashProxy._flashBridge.onfail();
-    }
-
-    var detectFlashVersion = function() {
-        var version = null;
-
-        // ie looks something like this:
-        // "WIN 9,0,124,0"
-        if (typeof(ActiveXObject) != "undefined") {
-                try {
-                    ie = true;
-                    var swf = new ActiveXObject("ShockwaveFlash.ShockwaveFlash");
-                    var version_string = swf.GetVariable("$version");
-                    // TODO: use match (below also)
-                    var versionArray = version_string.split(" ")[1].split(",");
-                    version = [];
-                    for (var i=0; i < versionArray.length; i++) {
-                        version[i] = parseInt(versionArray[i]);
-                    }
-                } catch (e) {
-                    ie = false;
-                }
-            }
-            
-        // On other browsers it looks like this:
-        // "Shockwave Flash 9.0 r124"
-        if (typeof navigator.plugins != "undefined") {
-            if (typeof navigator.plugins["Shockwave Flash"] != "undefined") {
-                var version_string = navigator.plugins["Shockwave Flash"].description;
-                version_string = version_string.replace(/\s*r/g, ".");
-                    var versionArray = version_string.split(" ")[2].split(".");
-                    version = [];
-                    for (var i=0; i < versionArray.length; i++) {
-                        version[i] = parseInt(versionArray[i]);
-                    }
-            }
-        }
-
-        // Prevent Vista + Flash 10.0 freezing behavior
-        // http://www.adobe.com/cfusion/webforums/forum/messageview.cfm?forumid=44&catid=184&threadid=1401765&enterthread=y
-        // The above link is no longer available, but several threads online still refer to it.
-        var userAgent = navigator.userAgent;
-        if (version !== null && version[0] === 10 && version[1] === 0 && userAgent.indexOf("Windows NT 6.0") !== -1) {
-            version = null;
-        }
-
-        // null out flash version except on for IE6 and 7
-//        if (userAgent.indexOf("MSIE 6.0") == -1 && userAgent.indexOf("MSIE 7.0") == -1) {
-//            version = null;
-//        }
-
-        return version;
-    };
-
-    var hasMinimumFlashVersion = function(minimumVersion) {
-        var flashVersion = detectFlashVersion();
-        
-        // not installed
-        if (flashVersion == null) {
-                return false;
-        }
-        
-        for (var i=0; i < Math.max(flashVersion.length, minimumVersion.length); i++) {
-                var difference = flashVersion[i] - minimumVersion[i];
-                if (difference != 0) {
-                        return (difference > 0) ? true : false;
-                }
-        }
-
-        // exact match
-        return true;
-    }
-    
-    var inject_flash = function() {
-        if (ie) {
-            var elt = document.createElement("div");
-            // IE requires a live element to be replaced
-            document.body.appendChild(elt);
-            // Inject object tag and params including ActiveX classid
-            elt.outerHTML = '<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" height="0" width="0" id="' + ID + '"><param name="movie" value="'+SWF_URL+'"></param></object>';
-            self.elt = document.getElementById(ID);
-        } else {
-            var elt = document.createElement("object");
-            elt.setAttribute("type", "application/x-shockwave-flash");
-            elt.setAttribute("width", 0);
-            elt.setAttribute("height", 0);
-            elt.setAttribute("id", ID);
-            elt.setAttribute("data", SWF_URL);
-
-            document.body.appendChild(elt);
-            self.elt = elt;
-        }
-    };
-
-    self.attachToOnload = function(handler) {
-        if (window.addEventListener) {
-            window.addEventListener("load", handler, true);
-        } else if (window.attachEvent) {
-            window.attachEvent("onload", handler);
-        } else {
-            onload = handler;
-        }
-    };
-
-    // Detect if document already loaded using HTML5 readyState
-    // Otherwise loader is not called, for example in JS Test Framework
-    if (document.readyState === "complete") {
-        self.loader();
-    }
-    else {
-        // Start this loader on page load
-        self.attachToOnload(self.loader);
-    }
-};
-
 
 
 
@@ -6476,9 +6055,11 @@ var PasswordAuthentication = Kaazing.Gateway.PasswordAuthentication;
             }
         }
     };
-    
+
+    $module.ChallengeRequest = ChallengeRequest;
+
     /**
-     * <B>(Read only)</B> The authentication scheme with which the server is 
+     * <B>(Read only)</B> The authentication scheme with which the server is
      *                    challenging.
      *   @field
      *   @name authenticationScheme
@@ -6486,7 +6067,7 @@ var PasswordAuthentication = Kaazing.Gateway.PasswordAuthentication;
      *   @memberOf ChallengeRequest
      */
     /**
-     * <B>(Read only)</B> The string after the space separator, not including the 
+     * <B>(Read only)</B> The string after the space separator, not including the
      *                    authentication scheme nor the space itself, or null if
      *                    no such string exists.
      *   @field
@@ -6495,9 +6076,9 @@ var PasswordAuthentication = Kaazing.Gateway.PasswordAuthentication;
      *   @memberOf ChallengeRequest
      */
     /**
-     * <B>(Read only)</B> The protected URI the access of which triggered this 
+     * <B>(Read only)</B> The protected URI the access of which triggered this
      *                    challenge.
-     * 
+     *
      *   @field
      *   @name location
      *   @type String
@@ -6506,7 +6087,7 @@ var PasswordAuthentication = Kaazing.Gateway.PasswordAuthentication;
     return ChallengeRequest;
 })(Kaazing.Gateway);
 
-// This will help the rest of the code within the closure to access ChallengeRequest by a 
+// This will help the rest of the code within the closure to access ChallengeRequest by a
 // straight variable name instead of using $module.ChallengeRequest
 var ChallengeRequest = Kaazing.Gateway.ChallengeRequest;
 
@@ -8783,14 +8364,14 @@ var WebSocketControlFrameHandler = (function() /*extends WebSocketHandlerAdapter
 /**
  * @private
  */
-var WebSocketRevalidateHandler = (function() {
+var WebSocketRevalidateHandler = (function($module) {
         ;;;var LOG = Logger.getLogger("RevalidateHandler");
-        
+
         var WebSocketRevalidateHandler = function(channel) {
             ;;;LOG.finest("ENTRY Revalidate.<init>")
             this.channel = channel;
         }
-        
+
         var isWebSocketClosing = function(channel) {
             var parent = channel.parent;
             if (parent) {
@@ -8800,7 +8381,7 @@ var WebSocketRevalidateHandler = (function() {
         }
 
         var $prototype = WebSocketRevalidateHandler.prototype;
-        
+
         $prototype.connect = function(location) {
             ;;;LOG.finest("ENTRY Revalidate.connect with {0}", location)
             if (isWebSocketClosing(this.channel)) {
@@ -8809,11 +8390,11 @@ var WebSocketRevalidateHandler = (function() {
             var $this = this;
             var create = new XMLHttpRequest0();
             create.withCredentials = true;
-            
+
             create.open("GET", location + "&.krn=" + Math.random(), true); //KG-3537 use unique url to prevent browser load from cache
             if($this.channel._challengeResponse != null && $this.channel._challengeResponse.credentials != null) {
                 create.setRequestHeader("Authorization", $this.channel._challengeResponse.credentials);
-                this.clearAuthenticationData($this.channel); 
+                this.clearAuthenticationData($this.channel);
             }
             create.onreadystatechange = function() {
                 switch (create.readyState) {
@@ -8828,16 +8409,16 @@ var WebSocketRevalidateHandler = (function() {
                         //handle 401
                         $this.handle401($this.channel, location, create.getResponseHeader("WWW-Authenticate"));
                         return;
-                   
+
                     }
                     break;
                 }
             };
 
             create.send(null);
-            
+
         }
-		
+
         $prototype.clearAuthenticationData = function(channel) {
 			if (channel._challengeResponse != null) {
 				channel._challengeResponse.clearCredentials();
@@ -8858,7 +8439,7 @@ var WebSocketRevalidateHandler = (function() {
             else if (challengeLocation.indexOf("/;ar/") > 0) {
                 challengeLocation = challengeLocation.substring(0, challengeLocation.indexOf("/;ar/"));
             }
-    		
+
     		var challengeRequest = new $module.ChallengeRequest(challengeLocation,  challenge);
 			var challengeHandler;
 			if (this.channel._challengeResponse.nextChallengeHandler != null ) {
@@ -8866,7 +8447,7 @@ var WebSocketRevalidateHandler = (function() {
 			} else {
 				challengeHandler = channel.challengeHandler;
 			}
-			
+
 			if ( challengeHandler != null && challengeHandler.canHandle(challengeRequest)) {
 				challengeHandler.handle(challengeRequest,function(challengeResponse) {
                        //fulfilled callback function
@@ -8880,9 +8461,10 @@ var WebSocketRevalidateHandler = (function() {
                        }
 				});
             }
-        }        
+        }
         return WebSocketRevalidateHandler;
-})();
+})(Kaazing.Gateway);
+
 
 
 
@@ -8966,30 +8548,30 @@ var WebSocketNativeDelegateHandler = (function() {
 /**
  * @private
  */
-var WebSocketNativeBalancingHandler = (function() /*extends WebSocketHandlerAdapter*/ {
+var WebSocketNativeBalancingHandler = (function($module) /*extends WebSocketHandlerAdapter*/ {
 		;;;var CLASS_NAME = "WebSocketNativeBalancingHandler";
 		;;;var LOG = Logger.getLogger(CLASS_NAME);
 
 		var WebSocketNativeBalancingHandler = function() {
 			;;;LOG.finest(CLASS_NAME, "<init>");
 		};
-		
+
         var handleRedirect = function($this, channel, redirectUri) {
             channel._redirecting = true;
             channel._redirectUri = redirectUri;
             $this._nextHandler.processClose(channel);
         }
-        
+
 		/**
 		 * @private
 		 */
 		var $prototype = WebSocketNativeBalancingHandler.prototype = new WebSocketHandlerAdapter();
-	
+
         $prototype.processConnect = function(channel, uri, protocol) {
             channel._balanced = 0;
             this._nextHandler.processConnect(channel, uri, protocol);
         }
-        
+
         $prototype.handleConnectionClosed = function(channel, wasClean, code, reason) {
             if (channel._redirecting == true) {
                 channel._redirecting = false;
@@ -9022,7 +8604,7 @@ var WebSocketNativeBalancingHandler = (function() /*extends WebSocketHandlerAdap
                 this._listener.connectionClosed(channel, wasClean, code, reason);
             }
         }
-        
+
 		$prototype.handleMessageReceived = function(channel, obj) {
 			;;;LOG.finest(CLASS_NAME, "handleMessageReceived", obj);
 
@@ -9057,9 +8639,9 @@ var WebSocketNativeBalancingHandler = (function() /*extends WebSocketHandlerAdap
             }
             else {
                 this._listener.binaryMessageReceived(channel, obj);
-            }                    
+            }
 		}
-		
+
 		$prototype.setNextHandler = function(nextHandler) {
 			this._nextHandler = nextHandler;
 			var listener = new WebSocketHandlerListener(this);
@@ -9104,7 +8686,7 @@ var WebSocketNativeBalancingHandler = (function() /*extends WebSocketHandlerAdap
             }
             else {
                 outer._listener.textMessageReceived(channel, message);
-            } 
+            }
             }
             listener.binaryMessageReceived = function(channel, obj) {
                 outer.handleMessageReceived(channel, obj);
@@ -9113,15 +8695,15 @@ var WebSocketNativeBalancingHandler = (function() /*extends WebSocketHandlerAdap
                outer.handleConnectionClosed(channel, wasClean, code, reason);
             }
 			nextHandler.setListener(listener);
-            
+
 		}
-		
+
 		$prototype.setListener = function(listener) {
 			this._listener = listener;
-		} 
-		
+		}
+
 	return WebSocketNativeBalancingHandler;
-})()
+})(Kaazing.Gateway)
 
 
 
@@ -9474,14 +9056,14 @@ var WebSocketNativeHandshakeHandler = (function() /*extends WebSocketHandlerAdap
 /**
  * @private
  */
-var WebSocketNativeAuthenticationHandler = (function() /*extends WebSocketHandlerAdapter*/ {
+var WebSocketNativeAuthenticationHandler = (function($module) /*extends WebSocketHandlerAdapter*/ {
 		;;;var CLASS_NAME = "WebSocketNativeAuthenticationHandler";
 		;;;var LOG = Logger.getLogger(CLASS_NAME);
 
 		var WebSocketNativeAuthenticationHandler = function() {
 			;;;LOG.finest(CLASS_NAME, "<init>");
 		};
-		
+
 	   var $prototype = WebSocketNativeAuthenticationHandler.prototype = new WebSocketHandlerAdapter();
 
         //internal functions
@@ -9490,7 +9072,7 @@ var WebSocketNativeAuthenticationHandler = (function() /*extends WebSocketHandle
 				channel._challengeResponse.clearCredentials();
 			}
 		}
-		
+
 		$prototype.handleRemoveAuthenticationData = function(channel) {
 			this.handleClearAuthenticationData(channel);
 			channel._challengeResponse = new $module.ChallengeResponse(null, null);
@@ -9501,7 +9083,7 @@ var WebSocketNativeAuthenticationHandler = (function() /*extends WebSocketHandle
 			this.handleClearAuthenticationData(channel); //clear authentication data
 			this._listener.connectionFailed(channel);
 		}
-        
+
         $prototype.handle401 = function(channel, location, challenge) {
             var $this = this;
             var serverURI = channel._location;
@@ -9509,35 +9091,35 @@ var WebSocketNativeAuthenticationHandler = (function() /*extends WebSocketHandle
 
             if (typeof(channel.parent.connectTimer) != "undefined") {
                 connectTimer = channel.parent.connectTimer;
-    
+
                 if (connectTimer != null) {
                     // Pause the connect timer while the user is providing the
                     // credentials.
                     connectTimer.pause();
                 }
             }
-            
+
             if (channel.redirectUri != null) {
                 //this connection has been redirected
                 serverURI = channel._redirectUri;
             }
-            
+
             var challengeRequest = new $module.ChallengeRequest(serverURI.toString(),  challenge);
-			
+
 			var challengeHandler;
 			if (channel._challengeResponse.nextChallengeHandler != null ) {
 				challengeHandler = channel._challengeResponse.nextChallengeHandler;
 			} else {
 				challengeHandler = channel.parent.challengeHandler;
 			}
-			
+
 			if ( challengeHandler != null && challengeHandler.canHandle(challengeRequest)) {
 				challengeHandler.handle(challengeRequest,function(challengeResponse) {
                         //fulfilled callback function
                         try {
                             if ( challengeResponse == null || challengeResponse.credentials == null) {
                                 // No response available
-                                $this.doError(channel); 
+                                $this.doError(channel);
                             } else {
                                 if (connectTimer != null) {
                                     // Resume the connect timer.
@@ -9556,11 +9138,11 @@ var WebSocketNativeAuthenticationHandler = (function() /*extends WebSocketHandle
 				this.doError(channel);
 			}
 		}
-        
+
 	   /**
 	    * @private
  	   */
-        
+
         $prototype.handleAuthenticate = function(channel, location, challenge) {
             channel.authenticationReceived = true;
 			this.handle401(channel,location, challenge);
@@ -9569,22 +9151,22 @@ var WebSocketNativeAuthenticationHandler = (function() /*extends WebSocketHandle
 			this._nextHandler = nextHandler;
             var $this = this;
             var listener = new WebSocketHandlerListener(this);
-            
+
             listener.authenticationRequested = function(channel, location, challenge) {
                //alert(CLASS_NAME + "authenticationRequested");
                $this.handleAuthenticate(channel,location, challenge);
             }
-            
+
 			nextHandler.setListener(listener);
-            
+
 		}
-		
+
 		$prototype.setListener = function(listener) {
 			this._listener = listener;
-		} 
-		
+		}
+
 	return WebSocketNativeAuthenticationHandler;
-})()
+})(Kaazing.Gateway)
 
 
 
@@ -11098,57 +10680,57 @@ var WebSocketEmulatedDelegateHandler = (function() {
 /**
  * @private
  */
-var WebSocketEmulatedAuthenticationHandler = (function() /*extends WebSocketHandlerAdapter*/ {
+var WebSocketEmulatedAuthenticationHandler = (function($module) /*extends WebSocketHandlerAdapter*/ {
 		;;;var CLASS_NAME = "WebSocketEmulatedAuthenticationHandler";
 		;;;var LOG = Logger.getLogger(CLASS_NAME);
 
 		var WebSocketEmulatedAuthenticationHandler = function() {
 			;;;LOG.finest(CLASS_NAME, "<init>");
 		};
-		
+
 	   var $prototype = WebSocketEmulatedAuthenticationHandler.prototype = new WebSocketHandlerAdapter();
 
         //internal functions
-		
+
 		$prototype.handleClearAuthenticationData = function(channel) {
 			if (channel._challengeResponse != null) {
 				channel._challengeResponse.clearCredentials();
 			}
 		}
-		
+
 		$prototype.handleRemoveAuthenticationData = function(channel) {
 			this.handleClearAuthenticationData(channel);
 			channel._challengeResponse = new $module.ChallengeResponse(null, null);
 		}
-        
+
         $prototype.handle401 = function(channel, location, challenge) {
             var $this = this;
             var connectTimer = null;
 
             if (typeof(channel.parent.connectTimer) != "undefined") {
                 connectTimer = channel.parent.connectTimer;
-                
+
                 if (connectTimer != null) {
-                    // Pause the connect timer while the user is providing the 
+                    // Pause the connect timer while the user is providing the
                     // credentials.
                     connectTimer.pause();
                 }
             }
-            
+
             var challengeLocation = location;
     		if (challengeLocation.indexOf("/;e/") > 0) {
                	challengeLocation = challengeLocation.substring(0, challengeLocation.indexOf("/;e/")); //"/;e/" was added by WebSocketImpl.as
             }
             var challengeUri = new WSURI(challengeLocation.replace("http", "ws"));
             var challengeRequest = new $module.ChallengeRequest(challengeLocation,  challenge);
-			
+
 			var challengeHandler;
 			if (channel._challengeResponse.nextChallengeHandler != null ) {
 				challengeHandler = channel._challengeResponse.nextChallengeHandler;
 			} else {
 				challengeHandler = channel.parent.challengeHandler;
 			}
-			
+
 			if ( challengeHandler != null && challengeHandler.canHandle(challengeRequest)) {
 				challengeHandler.handle(challengeRequest,function(challengeResponse) {
                         //fulfilled callback function
@@ -11177,13 +10759,13 @@ var WebSocketEmulatedAuthenticationHandler = (function() /*extends WebSocketHand
 				this._listener.connectionFailed(channel);
 			}
 		}
-        
+
 	   /**
 	    * Implement WebSocketListener methods
             *
 	    * @private
             */
-		
+
         $prototype.processConnect = function(channel, location, protocol) {
 			if(channel._challengeResponse != null && channel._challengeResponse.credentials != null) {
 				// Retry request with the auth response.
@@ -11207,7 +10789,7 @@ var WebSocketEmulatedAuthenticationHandler = (function() /*extends WebSocketHand
 			}
 			this._nextHandler.processConnect(channel, location, protocol);
 		}
-        
+
         $prototype.handleAuthenticate = function(channel, location, challenge) {
             channel.authenticationReceived = true;
 			this.handle401(channel,location, challenge);
@@ -11216,21 +10798,21 @@ var WebSocketEmulatedAuthenticationHandler = (function() /*extends WebSocketHand
 			this._nextHandler = nextHandler;
 			var listener = new WebSocketHandlerListener(this);
             var outer = this;
-            
+
             listener.authenticationRequested = function(channel, location, challenge) {
                //alert(CLASS_NAME + "authenticationRequested");
                outer.handleAuthenticate(channel,location, challenge);
             }
             nextHandler.setListener(listener);
-            
+
 		}
-		
+
 		$prototype.setListener = function(listener) {
 			this._listener = listener;
-		} 
-		
+		}
+
 	return WebSocketEmulatedAuthenticationHandler;
-})()
+})(Kaazing.Gateway)
 
 
 
@@ -11290,259 +10872,6 @@ var WebSocketEmulatedHandler = (function() {
         }
 
     return WebSocketEmulatedHandler;
-})();
-
-
-
-
-/**
- * @private
- */
-var WebSocketFlashEmulatedDelegateHandler = (function() {
-			;;;var CLASS_NAME = "WebSocketFlashEmulatedDelegateHandler";
-            ;;;var LOG = Logger.getLogger(CLASS_NAME);
-        var WebSocketFlashEmulatedDelegateHandler = function() {
-
-            ;;;LOG.finest(CLASS_NAME, "<init>");
-		};
-		
-        var $prototype = WebSocketFlashEmulatedDelegateHandler.prototype = new WebSocketHandlerAdapter();
-        
-		$prototype.processConnect = function(channel, uri, protocol) {
-			;;;LOG.finest(CLASS_NAME, "connect", channel);
-			if (channel.readyState == 2/*ReadyState.CLOSED*/) {
-				throw new Error("WebSocket is already closed");
-			}
-			var delegate = new WebSocketEmulatedFlashProxy();
-			delegate.parent = channel;
-			channel._delegate = delegate;
-			setDelegate(delegate, this);
-			delegate.connect(uri.toString(), protocol);
-		}
-		
-		$prototype.processTextMessage = function(channel, text) {
-			;;;LOG.finest(CLASS_NAME, "connect", channel);
-			if (channel.readyState == 1/*ReadyState.OPEN*/) {
-				channel._delegate.send(text);
-			}
-			else {
-				throw new Error("WebSocket is already closed");
-			}
-		}
-		$prototype.processBinaryMessage = function(channel, buffer) {
-			;;;LOG.finest(CLASS_NAME, "connect", channel);
-			if (channel.readyState == 1/*ReadyState.OPEN*/) {
-				channel._delegate.send(buffer);
-			}
-			else {
-				throw new Error("WebSocket is already closed");
-			}
-		}	 
-		$prototype.processClose = function(channel, code, reason) {
-			;;;LOG.finest(CLASS_NAME, "close", channel);
-			channel._delegate.close(code, reason);
-		}	 
-		
-		var setDelegate = function(nextHandler, $this) {
-            var listener = new WebSocketHandlerListener($this);
-            nextHandler.setListener(listener);
-            listener.redirected = function(channel, location) {
-               //alert(CLASS_NAME + "redirected");
-               //redirect is handled by WebSocketImpl.as, here only save the redirec location in channel
-               channel._redirectUri = location;
-            }
-		}
-
-	return WebSocketFlashEmulatedDelegateHandler;
-})();
-
-
-
-
-
-/**
- * @private
- */
-var WebSocketFlashEmulatedHandler = (function() {
-        ;;;var CLASS_NAME = "WebSocketFlashEmulatedHandler";
-        ;;;var LOG = Logger.getLogger(CLASS_NAME);
-        
-        var createAuthenticationHandler = function() {
-            var handler = new WebSocketEmulatedAuthenticationHandler();
-            return handler;
-        }
-
-		var createControlFrameHandler = function() {
-			var handler = new WebSocketControlFrameHandler();
-			return handler;
-		}
-
-        var createDelegateHandler = function() {
-            var handler = new WebSocketFlashEmulatedDelegateHandler();
-            return handler;
-        }
-
-        var _authHandler = createAuthenticationHandler();
-		var _controlFrameHandler = createControlFrameHandler();
-
-        var _delegateHandler = createDelegateHandler();
-        
-        var WebSocketFlashEmulatedHandler = function() {
-            ;;;LOG.finest(CLASS_NAME, "<init>");
-			this.setNextHandler(_authHandler);
-            _authHandler.setNextHandler(_controlFrameHandler);
-			_controlFrameHandler.setNextHandler(_delegateHandler);
-        };
-		
-        var $prototype = WebSocketFlashEmulatedHandler.prototype = new WebSocketHandlerAdapter();
-        
-        $prototype.processConnect = function(channel, location, protocol) {
-            //add x-kaazing-extension protocol
-            var protocols = [WebSocketHandshakeObject.KAAZING_EXTENDED_HANDSHAKE];
-            for (var i = 0; i < protocol.length; i++) {
-            	protocols.push(protocol[i]);
-            }
-                        //add extensions header if there is enabled extensions
-            var extensions = channel._extensions;
-            if (extensions.length > 0) {
-            	channel.requestHeaders.push(new URLRequestHeader(WebSocketHandshakeObject.HEADER_SEC_EXTENSIONS, extensions.join(";")));
-            }
-            this._nextHandler.processConnect(channel, location, protocols);
-        }
-        
-        $prototype.setNextHandler = function(nextHandler) {
-            this._nextHandler = nextHandler;
-            var listener = new WebSocketHandlerListener(this);
-            nextHandler.setListener(listener);
-	}
-		
-	$prototype.setListener = function(listener) {
-            this._listener = listener;
-	}   
-	return WebSocketFlashEmulatedHandler;
-})();
-
-
-
-
-/**
- * @private
- */
-var WebSocketFlashRtmpDelegateHandler = (function() {
-			;;;var CLASS_NAME = "WebSocketFlashRtmpDelegateHandler";
-            ;;;var LOG = Logger.getLogger(CLASS_NAME);
-            var $this;
-        var WebSocketFlashRtmpDelegateHandler = function() {
-
-            ;;;LOG.finest(CLASS_NAME, "<init>");
-            $this = this;
-		};
-		
-        var $prototype = WebSocketFlashRtmpDelegateHandler.prototype = new WebSocketHandlerAdapter();
-        
-		$prototype.processConnect = function(channel, uri, protocol) {
-			;;;LOG.finest(CLASS_NAME, "connect", channel);
-			if (channel.readyState == 2/*ReadyState.CLOSED*/) {
-				throw new Error("WebSocket is already closed");
-			}
-			var delegate = new WebSocketRtmpFlashProxy();
-			delegate.parent = channel;
-			channel._delegate = delegate;
-			setDelegate(delegate, this);
-			delegate.connect(uri.toString(), protocol);
-		}
-		
-		$prototype.processTextMessage = function(channel, text) {
-			;;;LOG.finest(CLASS_NAME, "connect", channel);
-			if (channel.readyState == 1/*ReadyState.OPEN*/) {
-				channel._delegate.send(text);
-			}
-			else {
-				throw new Error("WebSocket is already closed");
-			}
-		}
-		$prototype.processBinaryMessage = function(channel, buffer) {
-			;;;LOG.finest(CLASS_NAME, "connect", channel);
-			if (channel.readyState == 1/*ReadyState.OPEN*/) {
-				channel._delegate.send(buffer);
-			}
-			else {
-				throw new Error("WebSocket is already closed");
-			}
-		}	 
-		$prototype.processClose = function(channel, code, reason) {
-			;;;LOG.finest(CLASS_NAME, "close", channel);
-			channel._delegate.close(code, reason);
-		}	 
-
-		var setDelegate = function(nextHandler, $this) {
-			var listener = new WebSocketHandlerListener($this);
-            
-            listener.redirected = function(channel, location) {
-               //alert(CLASS_NAME + "redirected");
-               //redirect is handled by WebSocketRtmp.as, here only save the redirec location in channel
-               channel._redirectUri = location;
-            }
-            nextHandler.setListener(listener);
-		}
-
-	return WebSocketFlashRtmpDelegateHandler;
-})();
-
-
-
-
-
-/**
- * @private
- */
-var WebSocketFlashRtmpHandler = (function() {
-        ;;;var CLASS_NAME = "WebSocketFlashRtmpHandler";
-        ;;;var LOG = Logger.getLogger(CLASS_NAME);
-        
-        var createAuthenticationHandler = function() {
-            var handler = new WebSocketEmulatedAuthenticationHandler();
-            return handler;
-        }
-
-		var createControlFrameHandler = function() {
-			var handler = new WebSocketControlFrameHandler();
-			return handler;
-		}
-
-        var createDelegateHandler = function() {
-            var handler = new WebSocketFlashRtmpDelegateHandler();
-            return handler;
-        }
-
-        var _authHandler = createAuthenticationHandler();
-		var _controlFrameHandler = createControlFrameHandler();
-
-        var _delegateHandler = createDelegateHandler();
-        
-        var WebSocketFlashRtmpHandler = function() {
-            ;;;LOG.finest(CLASS_NAME, "<init>");
-			this.setNextHandler(_authHandler);
-            _authHandler.setNextHandler(_controlFrameHandler);
-			_controlFrameHandler.setNextHandler(_delegateHandler);
-        };
-		
-        var handleConnectionOpened = function(channel, protocol) {
-            ;;;LOG.finest(CLASS_NAME, "<init>");
-        }
-        
-        var $prototype = WebSocketFlashRtmpHandler.prototype = new WebSocketHandlerAdapter();
-        
-		$prototype.setNextHandler = function(nextHandler) {
-			this._nextHandler = nextHandler;
-            var listener = new WebSocketHandlerListener(this);
-            nextHandler.setListener(listener);
-		}
-		
-		$prototype.setListener = function(listener) {
-			this._listener = listener;
-		}   
-	return WebSocketFlashRtmpHandler;
 })();
 
 
@@ -11663,18 +10992,70 @@ var WebSocketSelectedHandler = (function() {
 
 
 
-
 /**
  * @private
  */
 var WebSocketStrategy = (function() {
-        
+
     var WebSocketStrategy = function(nativeEquivalent, handler, channelFactory) {
-            this._nativeEquivalent = nativeEquivalent;
-            this._handler = handler;
-            this._channelFactory = channelFactory;
-        };
+        this._nativeEquivalent = nativeEquivalent;
+        this._handler = handler;
+        this._channelFactory = channelFactory;
+    };
+
+    // Map of WebSocketStrategy keyed by strategy specific scheme
+    WebSocketStrategy._strategyMap = {};
+
+    // Map of list of strategies that can be applied when establishing the connection
+    // keyed by the scheme
+    WebSocketStrategy._strategyChoices = {
+					                                 "ws"  : new Array(),
+				                                   "wss" : new Array()
+					                               };
+
     return WebSocketStrategy;
+})();
+
+
+
+(function() {
+
+		var JAVASCRIPT_WS =      "javascript:ws";
+  	var JAVASCRIPT_WSS =     "javascript:wss";
+
+		var handler = new WebSocketSelectedHandler();
+		var nativeHandler = new WebSocketNativeHandler();
+		handler.setNextHandler(nativeHandler);
+
+		var channelFactory = new WebSocketNativeChannelFactory();
+
+		WebSocketStrategy._strategyMap[JAVASCRIPT_WS] = new WebSocketStrategy("ws", handler, channelFactory);
+  	WebSocketStrategy._strategyMap[JAVASCRIPT_WSS] = new WebSocketStrategy("wss", handler, channelFactory);
+
+  	WebSocketStrategy._strategyChoices["ws"].push(JAVASCRIPT_WS);
+  	WebSocketStrategy._strategyChoices["wss"].push(JAVASCRIPT_WSS);
+
+})();
+
+
+
+(function() {
+
+		var JAVASCRIPT_WSE =     "javascript:wse";
+    var JAVASCRIPT_WSE_SSL = "javascript:wse+ssl";
+
+		var handler = new WebSocketSelectedHandler();
+		var emulatedHandler = new WebSocketEmulatedHandler();
+		handler.setNextHandler(emulatedHandler);
+
+		var channelFactory = new WebSocketEmulatedChannelFactory();
+
+		WebSocketStrategy._strategyMap[JAVASCRIPT_WSE] = new WebSocketStrategy("ws", handler, channelFactory);
+    WebSocketStrategy._strategyMap[JAVASCRIPT_WSE_SSL] = new WebSocketStrategy("wss", handler, channelFactory);
+
+    WebSocketStrategy._strategyChoices["ws"].push(JAVASCRIPT_WSE);
+    WebSocketStrategy._strategyChoices["wss"].push(JAVASCRIPT_WSE_SSL);
+
 })();
 
 
@@ -11684,24 +11065,10 @@ var WebSocketStrategy = (function() {
  * @private
  */
 var WebSocketCompositeHandler = (function() {
-    
+
     ;;;var CLASS_NAME = "WebSocketCompositeHandler";
     ;;;var _LOG = Logger.getLogger(CLASS_NAME);
-    
-    var JAVASCRIPT_WS =      "javascript:ws";
-    var JAVASCRIPT_WSS =     "javascript:wss";
-    var JAVASCRIPT_WSE =     "javascript:wse";
-    var JAVASCRIPT_WSE_SSL = "javascript:wse+ssl";
-    var FLASH_WSE =          "flash:wse";
-    var FLASH_WSE_SSL =      "flash:wse+ssl";
-    var FLASH_WSR =          "flash:wsr";
-    var FLASH_WSR_SSL =      "flash:wsr+ssl";
-    
-    var _strategyMap/*<String,WebSocketStrategy>*/ = {}/*<String,WebSocketStrategy>*/;        
-    var _strategyChoices/*<String,Array/*String>*/ = {}/*<String,ArrayString>*/;
-    /*final*/ var _WEBSOCKET_NATIVE_CHANNEL_FACTORY = new WebSocketNativeChannelFactory();
-    /*final*/ var _WEBSOCKET_EMULATED_CHANNEL_FACTORY = new WebSocketEmulatedChannelFactory();  
-    
+
     //when IE 10 runs as IE 8 mode, Object.defineProperty returns true, but throws exception when called
     // so use a dummyObj to check Object.defineProperty function really works at page load time.
     var legacyBrowser = true;
@@ -11717,53 +11084,11 @@ var WebSocketCompositeHandler = (function() {
         }
         catch(e) {}
    }
-            
-           
 
     var WebSocketCompositeHandler = function() {
         this._handlerListener = createListener(this);
-        this._nativeHandler = createNativeHandler(this);
-        this._emulatedHandler = createEmulatedHandler(this);
-        this._emulatedFlashHandler = createFlashEmulatedHandler(this);
-        this._rtmpFlashHandler = createFlashRtmpHandler(this);
-        
-        ;;;_LOG.finest(CLASS_NAME, "<init>");
-        pickStrategies(); //pick strategies based on browser type and version
-        _strategyMap[JAVASCRIPT_WS] = new WebSocketStrategy("ws", this._nativeHandler, _WEBSOCKET_NATIVE_CHANNEL_FACTORY);
-        _strategyMap[JAVASCRIPT_WSS] = new WebSocketStrategy("wss", this._nativeHandler, _WEBSOCKET_NATIVE_CHANNEL_FACTORY);
-        _strategyMap[JAVASCRIPT_WSE] = new WebSocketStrategy("ws", this._emulatedHandler, _WEBSOCKET_EMULATED_CHANNEL_FACTORY);
-        _strategyMap[JAVASCRIPT_WSE_SSL] = new WebSocketStrategy("wss", this._emulatedHandler, _WEBSOCKET_EMULATED_CHANNEL_FACTORY);
-        _strategyMap[FLASH_WSE] = new WebSocketStrategy("ws", this._emulatedFlashHandler, _WEBSOCKET_EMULATED_CHANNEL_FACTORY);
-        _strategyMap[FLASH_WSE_SSL] = new WebSocketStrategy("wss", this._emulatedFlashHandler, _WEBSOCKET_EMULATED_CHANNEL_FACTORY);
-        _strategyMap[FLASH_WSR] = new WebSocketStrategy("ws", this._rtmpFlashHandler, _WEBSOCKET_EMULATED_CHANNEL_FACTORY);
-        _strategyMap[FLASH_WSR_SSL] = new WebSocketStrategy("wss", this._rtmpFlashHandler, _WEBSOCKET_EMULATED_CHANNEL_FACTORY);
-
     };
-    
-    function isIE6orIE7() {
-        if (browser != "ie") {
-            return false;
-        }
 
-        var appVersion = navigator.appVersion;
-        return (appVersion.indexOf("MSIE 6.0") >= 0 || appVersion.indexOf("MSIE 7.0") >= 0);
-    }
-
-    function pickStrategies() {
-        if (isIE6orIE7()) {
-            // Prefer Flash for IE6/IE7
-            _strategyChoices["ws"] = new Array(JAVASCRIPT_WS, FLASH_WSE, JAVASCRIPT_WSE);
-            _strategyChoices["wss"] = new Array(JAVASCRIPT_WSS, FLASH_WSE_SSL, JAVASCRIPT_WSE_SSL);
-        }
-        else {
-            // KG-3686, KG-4445: Prefer javascript; Do not use Flash for all modern (or unknown) browsers
-            // Includes browser value of chrome, firefox, safari, android, opera and others
-            // KG-3686: Flash loader.swf is prevented from loading in Loader.js (detectFlashVersion)
-            _strategyChoices["ws"] = new Array(JAVASCRIPT_WS,  JAVASCRIPT_WSE);
-            _strategyChoices["wss"] = new Array(JAVASCRIPT_WSS, JAVASCRIPT_WSE_SSL);
-        }
-    }
-   
          function createListener($this) {
             var listener = {};
             listener.connectionOpened = function(channel, protocol) {
@@ -11794,41 +11119,15 @@ var WebSocketCompositeHandler = (function() {
             }
             return listener;
         }
-        
-        /*final*/function createNativeHandler($this) {
-            var selectedHandler = new WebSocketSelectedHandler();
-            var nativeHandler = new WebSocketNativeHandler();
-            selectedHandler.setListener($this._handlerListener);
-            selectedHandler.setNextHandler(nativeHandler);
-            return selectedHandler;
-        }
 
-        /*final*/function createEmulatedHandler($this) {
-            var selectedHandler = new WebSocketSelectedHandler();
-            var emulatedHandler = new WebSocketEmulatedHandler();
-            selectedHandler.setListener($this._handlerListener);
-            selectedHandler.setNextHandler(emulatedHandler);
-            return selectedHandler;
-        }
-        
-        /*final*/function createFlashEmulatedHandler($this) {
-            var selectedHandler = new WebSocketSelectedHandler();
-            var emulatedFlashHandler = new WebSocketFlashEmulatedHandler();
-            selectedHandler.setListener($this._handlerListener);
-            selectedHandler.setNextHandler(emulatedFlashHandler);
-            return selectedHandler;
-        }
-        
-        /*final*/function createFlashRtmpHandler($this) {
-            var selectedHandler = new WebSocketSelectedHandler();
-            var rtmpFlashHandler = new WebSocketFlashRtmpHandler();
-            selectedHandler.setListener($this._handlerListener);
-            selectedHandler.setNextHandler(rtmpFlashHandler);
-            return selectedHandler;
-        }
+        var $prototype = WebSocketCompositeHandler.prototype;
 
-        var initDelegate = function(channel, strategyName) {
-            var strategy = _strategyMap[strategyName];
+        $prototype.initDelegate = function(channel, strategyName) {
+            var strategy = WebSocketStrategy._strategyMap[strategyName];
+
+            // inject listener to the handler corresponding to the strategy
+            strategy._handler.setListener(this._handlerListener);
+
             var channelFactory = strategy._channelFactory;
             var location = channel._location;
             var selectedChannel = channelFactory.createChannel(location, channel._protocol);
@@ -11838,9 +11137,7 @@ var WebSocketCompositeHandler = (function() {
             selectedChannel._handler = strategy._handler;
             selectedChannel._handler.processConnect(channel._selectedChannel, location, channel._protocol);
         }
-        
-        var $prototype = WebSocketCompositeHandler.prototype;
-        
+
         $prototype.fallbackNext = function(channel) {
             ;;;_LOG.finest(CLASS_NAME, "fallbackNext");
             var strategyName = channel.getNextStrategy();
@@ -11848,7 +11145,7 @@ var WebSocketCompositeHandler = (function() {
                 this.doClose(channel, false, 1006, "");
             }
             else {
-                initDelegate(channel, strategyName);
+                this.initDelegate(channel, strategyName);
             }
         }
 
@@ -11862,7 +11159,7 @@ var WebSocketCompositeHandler = (function() {
             }
         }
 
-        
+
         $prototype.doClose = function(channel, wasClean, code, reason) {
             if (channel.readyState  === WebSocket.CONNECTING || channel.readyState  === WebSocket.OPEN || channel.readyState  === WebSocket.CLOSING) {
                 channel.readyState = WebSocket.CLOSED;
@@ -11887,7 +11184,7 @@ var WebSocketCompositeHandler = (function() {
             }
             var scheme = compositeChannel._compositeScheme;
             if (scheme != "ws" && scheme != "wss") {
-                var strategy = _strategyMap[scheme];
+                var strategy = WebSocketStrategy._strategyMap[scheme];
                 if (strategy == null) {
                     throw new Error("Invalid connection scheme: " + scheme);
                 }
@@ -11895,7 +11192,7 @@ var WebSocketCompositeHandler = (function() {
                 compositeChannel._connectionStrategies.push(scheme);
             }
             else {
-                var connectionStrategies = _strategyChoices[scheme];
+                var connectionStrategies = WebSocketStrategy._strategyChoices[scheme];
                 if (connectionStrategies != null) {
                     for (var i = 0; i < connectionStrategies.length; i++) {
                         compositeChannel._connectionStrategies.push(connectionStrategies[i]);
@@ -11907,7 +11204,7 @@ var WebSocketCompositeHandler = (function() {
             }
             this.fallbackNext(compositeChannel);
         }
-        
+
         /*synchronized*/
         $prototype.processTextMessage = function(channel, message) {
             ;;;_LOG.finest(CLASS_NAME, "send", message);
@@ -11920,7 +11217,7 @@ var WebSocketCompositeHandler = (function() {
             selectedChannel._handler.processTextMessage(selectedChannel, message);
         }
 
-        
+
         /*synchronized*/
         $prototype.processBinaryMessage = function(channel, message) {
             ;;;_LOG.finest(CLASS_NAME, "send", message);
@@ -11944,7 +11241,7 @@ var WebSocketCompositeHandler = (function() {
                     channel._webSocket.readyState = WebSocket.CLOSING;
                 }
             }
- 
+
             // When the connection timeout expires due to network loss, we first
             // invoke doClose() to inform the application immediately. Then, we
             // invoke processClose() to close the connection but it may take a
@@ -11955,7 +11252,7 @@ var WebSocketCompositeHandler = (function() {
             // comment.
             var selectedChannel = parent._selectedChannel;
             selectedChannel._handler.processClose(selectedChannel, code, reason);
- 
+
         }
 
         $prototype.setListener = function(listener) {
@@ -11971,7 +11268,7 @@ var WebSocketCompositeHandler = (function() {
             var parent = channel.parent;
             switch (parent.readyState) {
                 case WebSocket.OPEN:
-                     /* 
+                     /*
                       * convert obj to correct datatype base on binaryType
                       */
                       if (parent._webSocket.binaryType  === "blob" && obj.constructor  == $rootModule.ByteBuffer) {
@@ -12042,12 +11339,12 @@ var WebSocketCompositeHandler = (function() {
 
             if (parent.readyState  === WebSocket.CONNECTING && !channel.authenticationReceived && !channel.preventFallback) {
                 this.fallbackNext(parent);
-            } 
+            }
             else {
                 this.doClose(parent, false, closeCode, closeReason);
             }
         }
-        
+
         $prototype.handleConnectionError = function(channel, e) {
             var parent = channel.parent;
             parent._webSocketChannelListener.handleError(parent._webSocket, e);
@@ -12476,16 +11773,16 @@ var HttpRedirectPolicy = Kaazing.Gateway.HttpRedirectPolicy;
 /**
     Creates a new ArrayBuffer of the given length in bytes.
     For details, click <a href="http://www.khronos.org/registry/typedarray/specs/latest/#5" target="_blank">here</a>.
-    
+
     @constructor
     @name  ArrayBuffer
     @param {Number} length The length of the ArrayBuffer in bytes.
     @class The ArrayBuffer type describes a buffer used to store data for the array buffer views.
            Kaazing JavaScript client library supports ArrayBuffer only if the browser supports it.
-           <BR /> 
+           <BR />
            It does not provide any custom implementation of ArrayBuffer for browsers that does not support ArrayBuffer.
            <BR />
-           The recommended practice is to use either <a href="./Blob.html">Blob</a> or <a href="./ByteBuffer.html">ByteBuffer</a> 
+           The recommended practice is to use either <a href="./Blob.html">Blob</a> or <a href="./ByteBuffer.html">ByteBuffer</a>
            as a binary type for browsers that do not provide support for ArrayBuffer.
            For details on ArrayBuffer and ArrayBufferView, click <a href="http://www.khronos.org/registry/typedarray/specs/latest/#5" target="_blank">here</a>.
 */
@@ -12510,17 +11807,17 @@ var HttpRedirectPolicy = Kaazing.Gateway.HttpRedirectPolicy;
     @param  url {String}
     @param  protocols {String|String[]}
 
-    @class WebSocket provides a bidirectional communication channel. <b>Application 
+    @class WebSocket provides a bidirectional communication channel. <b>Application
     developers should use <code>WebSocketFactory#createWebSocket()</code> function to
     create an instance of WebSocket. </b>
-    
+
     @see {@link WebSocketFactory#createWebSocket}
     See <a href="./WebSocketFactory.html">WebSocketFactory</a>.
 */
 
 /**
     Disconnects the WebSocket. If code is not an integer equal to 1000
-    or in the range 3000..4999, close() will throw an 
+    or in the range 3000..4999, close() will throw an
     <code>InvalidAccessError</code>.
 
     The reason string must be at most 123 bytes when UTF-8 encoded. If the
@@ -12557,8 +11854,8 @@ var HttpRedirectPolicy = Kaazing.Gateway.HttpRedirectPolicy;
 /**
     Gets the ChallengeHandler that is used during authentication both at the
     connect-time as well as at subsequent revalidation-time that occurs at
-    regular intervals. 
-    
+    regular intervals.
+
     @name      getChallengeHandler
     @return {ChallengeHandler}
 
@@ -12570,8 +11867,8 @@ var HttpRedirectPolicy = Kaazing.Gateway.HttpRedirectPolicy;
 /**
     Sets the ChallengeHandler that is used during authentication both at the
     connect-time as well as at subsequent revalidation-time that occurs at
-    regular intervals. 
-    
+    regular intervals.
+
     @name      setChallengeHandler
     @return {void}
 
@@ -12607,9 +11904,9 @@ var HttpRedirectPolicy = Kaazing.Gateway.HttpRedirectPolicy;
 */
 
 /**
-    <B>(Read only)</B> Connect timeout in milliseconds. The timeout will expire if 
-    there is no exchange of packets(for example, 100% packet loss) while 
-    establishing the connection. A timeout value of zero indicates 
+    <B>(Read only)</B> Connect timeout in milliseconds. The timeout will expire if
+    there is no exchange of packets(for example, 100% packet loss) while
+    establishing the connection. A timeout value of zero indicates
     no timeout.
 
     @field
@@ -12619,7 +11916,7 @@ var HttpRedirectPolicy = Kaazing.Gateway.HttpRedirectPolicy;
  */
 
 /**
-    <B>(Read only)</B> State of the connection. 
+    <B>(Read only)</B> State of the connection.
     It can be one of the following constants - <BR /><BR />
     <B>CONNECTING(0):</B> The connection is not yet open.<BR />
     <B>OPEN(1):</B> The connection is open and ready to communicate.<BR />
@@ -12673,16 +11970,16 @@ var HttpRedirectPolicy = Kaazing.Gateway.HttpRedirectPolicy;
 
 /**
     Type of binary data for message events. Valid values are "blob", "arraybuffer"
-    and "bytebuffer". Blob and ByteBuffer will work on any supported browser. 
+    and "bytebuffer". Blob and ByteBuffer will work on any supported browser.
     ArrayBuffer is only an allowable value on browsers that support the
     <a href="http://www.khronos.org/registry/typedarray/specs/latest/">
         Typed Array Specification
     </a>.
     If this property is set to an invalid type, a <code>SyntaxError</code> will
     be thrown.
-    
-    NOTE: On older platforms where setter cannot be defined, the value is checked 
-          onmessage is fired. 
+
+    NOTE: On older platforms where setter cannot be defined, the value is checked
+          onmessage is fired.
           If set to an invalid value, the error event is fired.
 
     @field
@@ -12773,9 +12070,9 @@ var HttpRedirectPolicy = Kaazing.Gateway.HttpRedirectPolicy;
 
 (function($rootModule, $module) {
     var _handler = new WebSocketCompositeHandler(); //singleton handler chain.
-    
+
     $module.WebSocket = (function() {
-        
+
         ;;;var CLASS_NAME = "WebSocket";
         ;;;var LOG = Logger.getLogger(CLASS_NAME);
         var webSocketChannelListener = {};
@@ -12806,7 +12103,7 @@ var HttpRedirectPolicy = Kaazing.Gateway.HttpRedirectPolicy;
             // connect
             connect(this, this.url, this.protocol, this.extensions, this._challengeHandler, this.connectTimeout);
         };
-        
+
         // verify single protocol per WebSocket API spec (May 2012)
         var verifyOneProtocol = function(s) {
             if (s.length == 0) {
@@ -12865,27 +12162,27 @@ var HttpRedirectPolicy = Kaazing.Gateway.HttpRedirectPolicy;
             $this._channel._webSocket = $this;
             $this._channel._webSocketChannelListener = webSocketChannelListener;
             $this._channel._extensions = extensions;
-            
+
             if (typeof(challengeHandler) != "undefined") {
                 $this._channel.challengeHandler = challengeHandler;
             }
-            
+
             if ((typeof(connectTimeout) != "undefined") && (connectTimeout > 0)) {
                 var $channel = $this._channel;
                 var connectTimer = new ResumableTimer(function() {
                                                           if ($channel.readyState == WebSocket.CONNECTING) {
                                                               // Inform the app by raising the CLOSE event.
                                                               _handler.doClose($channel, false, 1006, "Connection timeout");
-                                                              
+
                                                               // Try closing the connection all the way down. This may
-                                                              // block when there is a network loss. That's why we are 
-                                                              // first informing the application about the connection 
+                                                              // block when there is a network loss. That's why we are
+                                                              // first informing the application about the connection
                                                               // timeout.
                                                               _handler.processClose($channel, 0, "Connection timeout");
                                                               $channel.connectTimer = null;
                                                           }
                                                       },
-                                                      connectTimeout, 
+                                                      connectTimeout,
                                                       false);
                 $this._channel.connectTimer = connectTimer;
                 connectTimer.start();
@@ -12923,7 +12220,7 @@ var HttpRedirectPolicy = Kaazing.Gateway.HttpRedirectPolicy;
                     enumerable : true,
                     configurable : true,
                     get: function() { return _binaryType; },
-                    set: function(val){ 
+                    set: function(val){
                         if (val === "blob" || val === "arraybuffer" || val === "bytebuffer" ) {
                             _binaryType = val;
                         } else {
@@ -12958,7 +12255,7 @@ var HttpRedirectPolicy = Kaazing.Gateway.HttpRedirectPolicy;
 
         var $prototype = WebSocket.prototype;
 
-        
+
         /**
          * Sends text-based data to the remote socket location.
          * @private
@@ -12971,7 +12268,7 @@ var HttpRedirectPolicy = Kaazing.Gateway.HttpRedirectPolicy;
                 case 0:
                     ;;;LOG.error("WebSocket.send: Error: Attempt to send message on unopened or closed WebSocket")
                     throw new Error("Attempt to send message on unopened or closed WebSocket");
-                    
+
                 case 1:
                     if (typeof(data) === "string") {
                         _handler.processTextMessage(this._channel, data);
@@ -12979,17 +12276,17 @@ var HttpRedirectPolicy = Kaazing.Gateway.HttpRedirectPolicy;
                         _handler.processBinaryMessage(this._channel, data);
                     }
                     break;
-                    
+
                 case 2:
                 case 3:
                     break;
-                    
+
                 default:
                     ;;;LOG.error("WebSocket.send: Illegal state error");
                     throw new Error("Illegal state error");
             }
         }
-        
+
         /**
          * Disconnects the remote socket location.
          * @private
@@ -13018,7 +12315,7 @@ var HttpRedirectPolicy = Kaazing.Gateway.HttpRedirectPolicy;
                 case 0:
                 case 1:
                     _handler.processClose(this._channel, code, reason);
-                    break;                
+                    break;
                 case 2:
                 case 3:
                     break;
@@ -13045,7 +12342,7 @@ var HttpRedirectPolicy = Kaazing.Gateway.HttpRedirectPolicy;
                 var s = "WebSocket.setChallengeHandler(): Parameter \'challengeHandler\' is required";
                 throw new Error(s);
             }
-            
+
             this._challengeHandler = challengeHandler;
             this._channel.challengeHandler = challengeHandler;
         }
@@ -13077,7 +12374,7 @@ var HttpRedirectPolicy = Kaazing.Gateway.HttpRedirectPolicy;
                 var s = "WebSocket.setConnectTimeout(): connectTimeout should be an integer";
                 throw new Error(s);
             }
-        
+
             if (connectTimeout < 0) {
                 var s = "WebSocket.setConnectTimeout(): Connect timeout cannot be negative";
                 throw new Error(s);
@@ -13106,7 +12403,7 @@ var HttpRedirectPolicy = Kaazing.Gateway.HttpRedirectPolicy;
         var deliver = function($this) {
             var start = new Date().getTime();
             var delay = start + 50; // Deliver messages for up to 50 milliseconds
-    
+
             while ($this._queue.length > 0) {
                 // Reschedule delivery if too much time has passed since we started
                 if (new Date().getTime() > delay) {
@@ -13121,7 +12418,7 @@ var HttpRedirectPolicy = Kaazing.Gateway.HttpRedirectPolicy;
                 try {
                     if ($this.readyState == WebSocket.OPEN) {
                         doMessage($this, buf);
-                        
+
                         // No exception thrown
                         ok = true;
                     }
@@ -13150,10 +12447,10 @@ var HttpRedirectPolicy = Kaazing.Gateway.HttpRedirectPolicy;
             $this._delivering = false;
         }
 
-        
+
         var doClose = function($this, wasClean, code, reason) {
             ;;;LOG.entering($this, 'WebSocket.doClose');
-            
+
             delete $this._channel; //clean up channel
             setTimeout(function() {
                 var closeEvent = new CloseEvent($this, wasClean, code, reason);
@@ -13170,12 +12467,12 @@ var HttpRedirectPolicy = Kaazing.Gateway.HttpRedirectPolicy;
         }
 
         webSocketChannelListener.handleMessage = function($this, obj) {
-            
-            // On platforms where a setter can be defined, we should check 
-            // binary type at the time it is set and throw an exception. On 
-            // older platforms, the value should be checked at the time it 
-            // is relevant, specifically when onmessage is fired. If set 
-            // to an invalid value, the onerror listener can be fired with 
+
+            // On platforms where a setter can be defined, we should check
+            // binary type at the time it is set and throw an exception. On
+            // older platforms, the value should be checked at the time it
+            // is relevant, specifically when onmessage is fired. If set
+            // to an invalid value, the onerror listener can be fired with
             // an error event.
             if (!Object.defineProperty && !(typeof(obj) === "string")) {
                 var binaryType = $this.binaryType;
@@ -13185,7 +12482,7 @@ var HttpRedirectPolicy = Kaazing.Gateway.HttpRedirectPolicy;
                     return;
                 }
             }
-            
+
             //LOG.debug("ENTRY WebSocket.handleMessage with {0}", event)
             $this._queue.push(obj);
             if (!$this._delivering) {
@@ -13193,12 +12490,12 @@ var HttpRedirectPolicy = Kaazing.Gateway.HttpRedirectPolicy;
                 deliver($this);
             }
         }
-        
+
         webSocketChannelListener.handleClose = function($this, wasClean, code, reason) {
             //LOG.debug("ENTRY WebSocket.handleClose with {0}", event)
             doClose($this, wasClean, code, reason);
         }
-        
+
         webSocketChannelListener.handleError = function($this, event) {
             ;;;LOG.entering($this, 'WebSocket.handleError' + event);
             setTimeout(function() {
@@ -13280,14 +12577,9 @@ var HttpRedirectPolicy = Kaazing.Gateway.HttpRedirectPolicy;
 
         return WebSocket;
     })();
-    
-    // Expose impls as package private for flash Loader
-    $module.WebSocket.__impls__ = {};
-    $module.WebSocket.__impls__["flash:wse"] = WebSocketEmulatedFlashProxy;
-
 }(Kaazing,Kaazing.Gateway));
 
-// This will help the rest of the code within the closure to access WebSocket by a 
+// This will help the rest of the code within the closure to access WebSocket by a
 // straight variable name instead of using $module.WebSocket
 var WebSocket = $module.WebSocket;
 
@@ -13538,17 +12830,6 @@ var WebSocket = $module.WebSocket;
 // This will help the rest of the code within the closure to access WebSocketFactory by a 
 // straight variable name instead of using $module.WebSocketFactory
 var WebSocketFactory = Kaazing.Gateway.WebSocketFactory;
-
-
-
-
-/**
- * @ignore
- */
-window.___Loader = new ___Loader(LOADER_BASE_NAME);
-
-})();
-
 
 
 
