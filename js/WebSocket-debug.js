@@ -3883,7 +3883,7 @@ var Logger = function(name) {
 
 
 ;;;var ULOG = Logger.getLogger('com.kaazing.gateway.client.loader.Utils');
-    
+
 /**
  * Given a key, returns the value of the content attribute of the first
  * meta tag with a name attribute matching that key.
@@ -3951,8 +3951,8 @@ var decodeByteString = function(s) {
     for (var i=0; i<s.length; i++) {
         a.push(s.charCodeAt(i) & 0xFF);
     }
-    var buf = new $rootModule.ByteBuffer(a);
-    var v = getStringUnterminated(buf, Charset.UTF8);
+    var buf = new Kaazing.ByteBuffer(a);
+    var v = getStringUnterminated(buf, Kaazing.Charset.UTF8);
     ;;;ULOG.exiting(this, 'Utils.decodeByteString', v);
     return v;
 }
@@ -3969,14 +3969,14 @@ var decodeArrayBuffer = function(array) {
     for (var i=0; i<buf.length; i++) {
         a.push(buf[i]);
     }
-    var buf = new $rootModule.ByteBuffer(a);
-    var s = getStringUnterminated(buf, Charset.UTF8);
+    var buf = new Kaazing.ByteBuffer(a);
+    var s = getStringUnterminated(buf, Kaazing.Charset.UTF8);
     ;;;ULOG.exiting(this, 'Utils.decodeArrayBuffer', s);
     return s;
 }
 
 /**
- * Given an arrayBuffer, decode as a $rootModule.ByteBuffer
+ * Given an arrayBuffer, decode as a Kaazing.ByteBuffer
  * @private
  * @ignore
  */
@@ -3988,7 +3988,7 @@ var decodeArrayBuffer2ByteBuffer = function(array) {
         a.push(buf[i]);
     }
     ;;;ULOG.exiting(this, 'Utils.decodeArrayBuffer2ByteBuffer');
-    return new $rootModule.ByteBuffer(a);
+    return new Kaazing.ByteBuffer(a);
 }
 
 var ESCAPE_CHAR = String.fromCharCode(0x7F);
@@ -4066,7 +4066,7 @@ var encodeByteString = function(buf, requiresEscaping) {
         } while ( encodedLength < bytes.length);
 
 		// convert UTF-8 char codes to String
-        var byteString = partsOfByteString.join("");	
+        var byteString = partsOfByteString.join("");
 
 		// restore original byte values for \u0000
 		if (bytes === array) {
