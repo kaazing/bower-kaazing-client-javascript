@@ -1,6 +1,6 @@
 {
     "name": "kaazing-client-javascript",
-    "version": "5.0.0-47",
+    "version": "5.0.0-48",
     "description": "Files necessary to develop a Javascript-based client for a Kaazing WebSocket Gateway.",
     "repository": {
         "type": "git",

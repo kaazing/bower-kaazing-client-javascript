@@ -5137,7 +5137,7 @@ var XMLHttpRequest0 = (function() {
 
 
 // Create WebSocket module under root module
-/**
+/*
  * @namespace
  */
 Kaazing.Gateway = Kaazing.namespace("Gateway");
@@ -5857,12 +5857,11 @@ $module.Oid = (function() {
      * Model an object identifier, and provide facilities to see the object identifier
      * as an array of numbers (e.g. <code>(1,3,2,5,3,2)</code>).
      *
-     * Constructor from an array.
-     * 
-     * @constructor
-     *
-     * @param data the array with object identifier data
      * @class
+     * @alias Oid
+     * 
+     * @param data    the array with object identifier
+     * @constructor
      */ 
     var Oid = function(data) {
         this.rep = data;
@@ -5877,7 +5876,7 @@ $module.Oid = (function() {
      * @public
      * @function
      * @name asArray
-     * @memberOf Oid
+     * @memberOf Oid#
      */
     $prototype.asArray = function() {
         return this.rep;
@@ -5890,7 +5889,7 @@ $module.Oid = (function() {
      * @public
      * @function
      * @name asString
-     * @memberOf Oid
+     * @memberOf Oid#
      */
     $prototype.asString = function() {
         var s = "";
@@ -5914,7 +5913,7 @@ $module.Oid = (function() {
      * @function
      * @static
      * @name create
-     * @memberOf Oid
+     * @memberOf Oid#
      */
     Oid.create = function(data) {
         return new Oid(data.split("."));
@@ -5977,6 +5976,10 @@ function InternalDefaultChallengeHandler() {
      * Represents a user name and password as a model object, used in <code>BasicChallengeHandler</code> instances.
      * 
      * @class
+     * @alias PasswordAuthentication
+     * @param username {String}    user name
+     * @param password {String}    password
+     * @constructor
      */
     var PasswordAuthentication = function(username, password) {
         this.username = username;
@@ -5984,10 +5987,10 @@ function InternalDefaultChallengeHandler() {
     }
     
     /**
-     * clear user name and password
+     * Clears the username and the password.
      * 
      * @function
-     * @memberOf PasswordAuthentication
+     * @memberOf PasswordAuthentication#
      */
     PasswordAuthentication.prototype.clear = function() {
         this.username = null;
@@ -6064,7 +6067,7 @@ var PasswordAuthentication = Kaazing.Gateway.PasswordAuthentication;
      *   @field
      *   @name authenticationScheme
      *   @type String
-     *   @memberOf ChallengeRequest
+     *   @memberOf ChallengeRequest#
      */
     /**
      * <B>(Read only)</B> The string after the space separator, not including the
@@ -6073,7 +6076,7 @@ var PasswordAuthentication = Kaazing.Gateway.PasswordAuthentication;
      *   @field
      *   @name authenticationParameters
      *   @type String
-     *   @memberOf ChallengeRequest
+     *   @memberOf ChallengeRequest#
      */
     /**
      * <B>(Read only)</B> The protected URI the access of which triggered this
@@ -6082,7 +6085,7 @@ var PasswordAuthentication = Kaazing.Gateway.PasswordAuthentication;
      *   @field
      *   @name location
      *   @type String
-     *   @memberOf ChallengeRequest
+     *   @memberOf ChallengeRequest#
      */
     return ChallengeRequest;
 })(Kaazing.Gateway);
@@ -6095,38 +6098,39 @@ var ChallengeRequest = Kaazing.Gateway.ChallengeRequest;
 
 
 (function($module) {
-	/**
-	 * @ignore
-	 */
-	$module.ChallengeResponse = (function() {
+    /**
+     * @ignore
+     */
+    $module.ChallengeResponse = (function() {
 
-		/**
-		 * A challenge response contains a byte array representing the response to the server,
-		 * and a reference to the next challenge handler to handle any further challenges for the request.
-                 *
-		 * Constructor from a set of credentials to send to the server in an 'Authorization:' header
-		 * and the next challenge handler responsible for handling any further challenges for the request.
-		 * @class
-		 * @constructor
-		 * @param credentials a set of credentials to send to the server in an 'Authorization:' header
-		 * @param nextChallengeHandler the next challenge handler responsible for handling any further challenges for the request.
-		 */
-		var ChallengeResponse = function(credentials, nextChallengeHandler) {
-			this.credentials = credentials;
-			this.nextChallengeHandler = nextChallengeHandler;
-		};
+        /**
+         * A challenge response contains a byte array representing the response to the server,
+         * and a reference to the next challenge handler to handle any further challenges for the request.
+         *
+         * Constructor from a set of credentials to send to the server in an 'Authorization:' header
+         * and the next challenge handler responsible for handling any further challenges for the request.
+         * @class
+         * @alias ChallengeResponse
+         * @constructor
+         * @param credentials a set of credentials to send to the server in an 'Authorization:' header
+         * @param nextChallengeHandler the next challenge handler responsible for handling any further challenges for the request.
+         */
+        var ChallengeResponse = function(credentials, nextChallengeHandler) {
+            this.credentials = credentials;
+            this.nextChallengeHandler = nextChallengeHandler;
+        };
 
-		var $prototype = ChallengeResponse.prototype;
+        var $prototype = ChallengeResponse.prototype;
 
-		$prototype.clearCredentials = function() {
-			if (this.credentials != null) {
-				//this.credentials.clear();
-				this.credentials = null;
-			}
-		}
+        $prototype.clearCredentials = function() {
+            if (this.credentials != null) {
+                //this.credentials.clear();
+                this.credentials = null;
+            }
+        }
 
-		return ChallengeResponse;
-	})();
+        return ChallengeResponse;
+    })();
 
 })(Kaazing.Gateway);
 
@@ -6187,7 +6191,7 @@ var ChallengeResponse = Kaazing.Gateway.ChallengeResponse;
      * 
      * @public
      * @alias setRealmLoginHandler
-     * @memberOf BasicChallengeHandler
+     * @memberOf BasicChallengeHandler#
      */
     $prototype.setRealmLoginHandler = function(realm, loginHandler) {
 	if (realm == null) {
@@ -6208,7 +6212,7 @@ var ChallengeResponse = Kaazing.Gateway.ChallengeResponse;
      *                   otherwise false
      * @public
      * @alias canHandle
-     * @memberOf BasicChallengeHandler
+     * @memberOf BasicChallengeHandler#
      */
     $prototype.canHandle = function(challengeRequest) {
 	return challengeRequest != null && "Basic" == challengeRequest.authenticationScheme;
@@ -6227,7 +6231,7 @@ var ChallengeResponse = Kaazing.Gateway.ChallengeResponse;
      *
      * @public
      * @alias handle
-     * @memberOf BasicChallengeHandler
+     * @memberOf BasicChallengeHandler#
      */
     $prototype.handle = function(challengeRequest, callback) {
 	
@@ -6265,7 +6269,7 @@ var ChallengeResponse = Kaazing.Gateway.ChallengeResponse;
      * @return {void}
      * @public
      * @alias loginHandler
-     * @memberOf BasicChallengeHandler
+     * @memberOf BasicChallengeHandler#
      */
     $prototype.loginHandler = function(callback) {
 	callback(null);
@@ -6550,7 +6554,7 @@ $module.DispatchChallengeHandler  = (function(){
      * @public
      * @function
      * @name register
-     * @memberOf DispatchChallengeHandler
+     * @memberOf DispatchChallengeHandler#
      */
     $prototype.register  = function(locationDescription, challengeHandler) {
         if (locationDescription == null || locationDescription.length == 0) {
@@ -6578,7 +6582,7 @@ $module.DispatchChallengeHandler  = (function(){
      * @public
      * @function
      * @name unregister
-     * @memberOf DispatchChallengeHandler
+     * @memberOf DispatchChallengeHandler#
      */
     $prototype.unregister  = function(locationDescription, challengeHandler) {
         if (locationDescription == null || locationDescription.length == 0) {
@@ -6640,12 +6644,14 @@ var DispatchChallengeHandler = $module.DispatchChallengeHandler;
      * @see http://tools.ietf.org/html/rfc2617: RFC 2617 - HTTP Authentication
      * 
      * @class
+     * @alias NegotiateChallengeHandler
+     * @constructor
      */
     var NegotiateChallengeHandler = function()  {
         this.candidateChallengeHandlers = new Array();
     };
-	
-	var Oid = $module.Oid;
+    
+    var Oid = $module.Oid;
 
     var makeSPNEGOInitTokenByOids = function(strings) {
         var oids = new Array();
@@ -6671,7 +6677,7 @@ var DispatchChallengeHandler = $module.DispatchChallengeHandler;
      * @public
      * @function
      * @name register
-     * @memberOf NegotiateChallengeHandler
+     * @memberOf NegotiateChallengeHandler#
      */
     $prototype.register = function(handler) {
         if (handler == null) {
@@ -6757,6 +6763,8 @@ $module.NegotiableChallengeHandler = (function() {
      * @see NegotiateChallengeHandler
      * 
      * @class
+     * @alias NegotiableChallengeHandler
+     * @constructor
      */
     var NegotiableChallengeHandler = function() {
         this.loginHandler = undefined;
@@ -6776,7 +6784,7 @@ $module.NegotiableChallengeHandler = (function() {
      * @public
      * @function
      * @name getSupportedOids
-     * @memberOf NegotiableChallengeHandler
+     * @memberOf NegotiableChallengeHandler#
      */
     NegotiableChallengeHandler.prototype.getSupportedOids = function() {
         return new Array();
@@ -6815,6 +6823,8 @@ var WebSocketHandshakeObject = (function() {
 /**
   Creates a new WebSocketExtension instance.
 
+  @ignore
+  @private
   @constructor
   @name  WebSocketExtension
   @class WebSocketExtension represents an extension as defined by RFC-6455 that 
@@ -6845,9 +6855,9 @@ var WebSocketHandshakeObject = (function() {
           @param name {String} parmaeter name
           @return {String}  the value of the parameter with the specified name
 
-	      @public
-   	      @function
-          @memberOf WebSocketExtension
+          @public
+          @function
+          @memberOf WebSocketExtension#
          */
         $prototype.getParameter = function(pname) {
             return this.parameters[pname];
@@ -6861,9 +6871,9 @@ var WebSocketHandshakeObject = (function() {
           @param pvalue {String} parmaeter value
           @return {void}
 
-	      @public
-   	      @function
-          @memberOf WebSocketExtension
+          @public
+          @function
+          @memberOf WebSocketExtension#
          */
         $prototype.setParameter = function(pname, pvalue) {
             this.parameters[pname] = pvalue;
@@ -6876,11 +6886,11 @@ var WebSocketHandshakeObject = (function() {
           @name getParameters
           @return {Array}  names of all the parameters
 
-	      @public
-   	      @function
-          @memberOf WebSocketExtension
+          @public
+          @function
+          @memberOf WebSocketExtension#
          */
-	    $prototype.getParameters = function() {
+         $prototype.getParameters = function() {
             var arr = [];
             for(var name in this.parameters) {
                 if (this.parameters.hasOwnProperty(name)) {
@@ -6908,9 +6918,9 @@ var WebSocketHandshakeObject = (function() {
           @name toString
           @return {String}  string representation of the extension
 
-	      @public
-   	      @function
-          @memberOf WebSocketExtension
+          @public
+          @function
+          @memberOf WebSocketExtension#
          */
         $prototype.toString = function() {
             var arr = [this.name];
@@ -7217,27 +7227,30 @@ function CloseEvent(target_, wasClean_, code_, reason_) {
     True if the WebSocket closed cleanly
 
     @field
+    @readonly
     @name       wasClean
     @type       Boolean
-    @memberOf   CloseEvent
+    @memberOf   CloseEvent#
 */
 
 /**
     WebSocket close message status code
 
     @field
+    @readonly
     @name       code
     @type       Number
-    @memberOf   CloseEvent
+    @memberOf   CloseEvent#
 */
 
 /**
     WebSocket close reason
 
     @field
+    @readonly
     @name       reason
     @type       String
-    @memberOf   CloseEvent
+    @memberOf   CloseEvent#
 */
 
 
@@ -7268,9 +7281,10 @@ function MessageEvent(target_, data_, origin_) {
     Contents of the message.
 
     @field
+    @readonly
     @name       data
     @type       Object
-    @memberOf   MessageEvent
+    @memberOf   MessageEvent#
 */
 
 /**
@@ -7279,9 +7293,10 @@ function MessageEvent(target_, data_, origin_) {
     Concept.
 
     @field
+    @readonly
     @name       origin
     @type       String
-    @memberOf   MessageEvent
+    @memberOf   MessageEvent#
 */
 
 
@@ -7404,9 +7419,10 @@ function MessageEvent(target_, data_, origin_) {
                 <B>(Read only)</B> Size (in bytes) of the Blob.
 
                 @field
+                @readonly
                 @name       size
                 @type       Number
-                @memberOf   Blob
+                @memberOf   Blob#
             */
             size: array.length,
 
@@ -7417,7 +7433,7 @@ function MessageEvent(target_, data_, origin_) {
                 @readonly
                 @name       type
                 @type       String
-                @memberOf   Blob
+                @memberOf   Blob#
             */
             type: contentType || "",
 
@@ -7425,7 +7441,7 @@ function MessageEvent(target_, data_, origin_) {
                 Slice the Blob and return a new Blob.
 
                 @name       slice
-                @memberOf   Blob
+                @memberOf   Blob#
                 @function
                 @return {Blob}
 
@@ -9945,77 +9961,84 @@ var WebSocketEmulatedProxy = (function() {
     /**
      * The ready state indicates the connection status.
      *
-     * @public
+     * @private
+     * @ignore
      * @field
      * @name readyState
      * @type Number
-     * @memberOf WebSocket
+     * @memberOf WebSocketEmulatedProxy
      */
     $prototype.readyState = 0;
 
     /**
      * The number of bytes queued to be sent.
      *
-     * @public
+     * @private
+     * @ignore
      * @field
      * @name bufferedAmount
      * @type Number
-     * @memberOf WebSocket
+     * @memberOf WebSocketEmulatedProxy
      */
     $prototype.bufferedAmount = 0;
 
     /**
      * The URL with which the WebSocket was constructed.
      *
-     * @public
+     * @private
+     * @ignore
      * @field
      * @name URL
      * @type String
-     * @memberOf WebSocket
+     * @memberOf WebSocketEmulatedProxy
      */
     $prototype.URL = "";
 
     /**
      * The onopen handler is called when the connection is established.
      *
-     * @public
+     * @private
+     * @ignore
      * @field
      * @name onopen
      * @type Function
-     * @memberOf WebSocket
+     * @memberOf WebSocketEmulatedProxy
      */
     $prototype.onopen = function() {};
 
     /**
      * The onopen handler is called when the connection is established.
      *
-     * @internal
+     * @private
+     * @ignore
      * @field
      * @name onopen
      * @type Function
-     * @memberOf WebSocket
+     * @memberOf WebSocketEmulatedProxy
      */
     $prototype.onerror = function() {};
 
     /**
      * The onmessage handler is called when data arrives.
      *
-     * @public
+     * @private
+     * @ignore
      * @field
      * @name onmessage
      * @type Function
-     * @memberOf WebSocket
+     * @memberOf WebSocketEmulatedProxy
      */
     $prototype.onmessage = function(event) {};
     
     /**
      * The onclose handler is called when the connection is terminated.
      *
-     * @public
+     * @private
+     * @ignore
      * @field
      * @name onclose
      * @type Function
-     * @memberOf WebSocket
+     * @memberOf WebSocketEmulatedProxy
      */
     $prototype.onclose = function() {};
 
@@ -10076,10 +10099,11 @@ var WebSocketEmulatedProxy = (function() {
      *
      * @return {bool}
      *
-     * @public
+     * @private
+     * @ignore
      * @function
      * @name send
-     * @memberOf WebSocket
+     * @memberOf WebSocketEmulatedProxy
      */
     $prototype.send = function(data) {
         var $this = this;
@@ -10156,10 +10180,11 @@ var WebSocketEmulatedProxy = (function() {
      *
      * @return {void}
      *
-     * @public
+     * @private
+     * @ignore
      * @function
      * @name close
-     * @memberOf WebSocket
+     * @memberOf WebSocketEmulatedProxy
      */
     $prototype.close = function(code, reason) {
         ;;;WSEBLOG.entering(this, 'WebSocketEmulatedProxy.close');
@@ -11378,6 +11403,7 @@ var WebSocketCompositeHandler = (function() {
     origin, host, domain, etc. 
 
     @field
+    @readonly
     @name HttpRedirectPolicy.ALWAYS
     @type HttpRedirectPolicy
     @memberOf HttpRedirectPolicy
@@ -11387,6 +11413,7 @@ var WebSocketCompositeHandler = (function() {
     <B>(Read only)</B> Do not follow HTTP redirects. 
 
     @field
+    @readonly
     @name HttpRedirectPolicy.NEVER
     @type HttpRedirectPolicy
     @memberOf HttpRedirectPolicy
@@ -11426,6 +11453,7 @@ var WebSocketCompositeHandler = (function() {
      ws://marketing.example.co.uk:8001 and ws://sales.example.co.uk:8002 are examples of
      URIs with peer-domains.
     @field
+    @readonly
     @name HttpRedirectPolicy.PEER_DOMAIN
     @type HttpRedirectPolicy
     @memberOf HttpRedirectPolicy
@@ -11443,6 +11471,7 @@ var WebSocketCompositeHandler = (function() {
      ws://production.example.com:8002.
 
     @field
+    @readonly
     @name HttpRedirectPolicy.SAME_DOMAIN
     @type HttpRedirectPolicy
     @memberOf HttpRedirectPolicy
@@ -11455,6 +11484,7 @@ var WebSocketCompositeHandler = (function() {
      Note that authority includes the hostname and the port.
 
     @field
+    @readonly
     @name HttpRedirectPolicy.SAME_ORIGIN
     @type HttpRedirectPolicy
     @memberOf HttpRedirectPolicy
@@ -11477,6 +11507,7 @@ var WebSocketCompositeHandler = (function() {
      sub-domain of the domain in ws://example.com:9001. 
 
     @field
+    @readonly
     @name HttpRedirectPolicy.SUB_DOMAIN
     @type HttpRedirectPolicy
     @memberOf HttpRedirectPolicy
@@ -11517,7 +11548,7 @@ var WebSocketCompositeHandler = (function() {
         
             @public
             @function
-            @memberOf HttpRedirectPolicy
+            @memberOf HttpRedirectPolicy#
         */
         $prototype.toString = function() {
             return "HttpRedirectPolicy." + this.name;
@@ -11534,7 +11565,7 @@ var WebSocketCompositeHandler = (function() {
            
            @public
            @function
-           @memberOf HttpRedirectPolicy
+           @memberOf HttpRedirectPolicy#
          */
         $prototype.isRedirectionAllowed = function(originalLoc, redirectLoc) {
             if (arguments.length < 2) {
@@ -11824,13 +11855,12 @@ var HttpRedirectPolicy = Kaazing.Gateway.HttpRedirectPolicy;
     reason string is too long, close() will throw a <code>SyntaxError</code>.
 
     @name       close
-    @return {void}
+    @return     {void}
 
     @function
-    @memberOf   WebSocket
+    @memberOf   WebSocket#
     @param  code {Number}    <B>(Optional)</B> A numeric value indicating close code.
     @param  reason {String}  <B>(Optional)</B> A human readable string indicating why the client is closing the WebSocket
-    @return {void}
 */
 
 /**
@@ -11839,15 +11869,17 @@ var HttpRedirectPolicy = Kaazing.Gateway.HttpRedirectPolicy;
     text WebSocket message is sent. When send() is called with a Blob, ArrayBuffer or
     ByteBuffer, a binary WebSocket message is sent.
 
-    If send() is called with other data types,
-    an invalid type Error will be thrown.
+    If send() is called with other data types an invalid type Error will be thrown.
 
     If send() is called while the WebSocket is in the CONNECTING state,
     an <code>InvalidStateError</code> will be thrown.
 
     @name       send
+    @return     {void}
+
+    @public
     @function
-    @memberOf   WebSocket
+    @memberOf   WebSocket#
     @param  data {String|Blob|ArrayBuffer|ByteBuffer}   message payload
 */
 
@@ -11861,7 +11893,7 @@ var HttpRedirectPolicy = Kaazing.Gateway.HttpRedirectPolicy;
 
     @public
     @function
-    @memberOf  WebSocket
+    @memberOf  WebSocket#
 */
 
 /**
@@ -11874,7 +11906,7 @@ var HttpRedirectPolicy = Kaazing.Gateway.HttpRedirectPolicy;
 
     @public
     @function
-    @memberOf  WebSocket
+    @memberOf  WebSocket#
     @param challengeHandler {ChallengeHandler}  used for authentication
 */
 
@@ -11887,7 +11919,7 @@ var HttpRedirectPolicy = Kaazing.Gateway.HttpRedirectPolicy;
 
     @public
     @function
-    @memberOf  WebSocket
+    @memberOf  WebSocket#
 */
 
 /**
@@ -11899,7 +11931,7 @@ var HttpRedirectPolicy = Kaazing.Gateway.HttpRedirectPolicy;
 
     @public
     @function
-    @memberOf  WebSocket
+    @memberOf  WebSocket#
     @param redirectPolicy {HttpRedirectPolicy}  HTTP redirect policy
 */
 
@@ -11910,9 +11942,10 @@ var HttpRedirectPolicy = Kaazing.Gateway.HttpRedirectPolicy;
     no timeout.
 
     @field
+    @readonly
     @name connectTimeout
     @type Number(Integer)
-    @memberOf WebSocket
+    @memberOf WebSocket#
  */
 
 /**
@@ -11924,48 +11957,58 @@ var HttpRedirectPolicy = Kaazing.Gateway.HttpRedirectPolicy;
     <B>CLOSED(3):</B> The connection is closed or couldn't be opened.<BR />
 
     @field
+    @readonly
     @name       readyState
     @type       Number
-    @memberOf   WebSocket
+    @memberOf   WebSocket#
 */
 
 /**
-    <B>(Read only)</B> Number of bytes that are queued to send but not yet written to the network.
+    <B>(Read only)</B> Number of bytes that are queued to send but not yet written to the 
+    network.
 
     @field
+    @readonly
     @name       bufferedAmount
     @type       Number
-    @memberOf   WebSocket
+    @memberOf   WebSocket#
 */
 
 /**
-    Protocol name selected by the WebSocket server during the connection
+    <B>(Read only)</B> Protocol name selected by the WebSocket server during the connection
     handshake.
 
     @field
+    @readonly
     @name       protocol
     @type       String
-    @memberOf   WebSocket
+    @memberOf   WebSocket#
 */
 
-/**
-    Extensions chosen by the server during the connection handshake. If the
-    connection has not yet been established, or if no extensions were selected,
+/*
+    <B>(Read only)</B> Extensions chosen by the server during the connection handshake. If
+    the connection has not yet been established, or if no extensions were selected,
     this property will be the empty string.
+   
+    Ignore for time being as we should figure out our extension strategy before exposing
+    anything publicly.
 
+    @ignore
     @field
+    @readonly
     @name       extensions
     @type       String
-    @memberOf   WebSocket
+    @memberOf   WebSocket#
 */
 
 /**
-    <B>(Read only)</B> The location of the WebSocket.
+    <B>(Read only)</B> WebSocket end-point or location.
 
     @field
+    @readonly
     @name       url
     @type       String
-    @memberOf   WebSocket
+    @memberOf   WebSocket#
 */
 
 /**
@@ -11985,12 +12028,10 @@ var HttpRedirectPolicy = Kaazing.Gateway.HttpRedirectPolicy;
     @field
     @name       binaryType
     @type       String
-    @memberOf   WebSocket
+    @memberOf   WebSocket#
 */
 
-
-
-// callbacks
+// Callbacks
 
 /**
     MessageEvent handler property.
@@ -11999,18 +12040,38 @@ var HttpRedirectPolicy = Kaazing.Gateway.HttpRedirectPolicy;
     @field
     @name       onmessage
     @type       Function
-    @memberOf   WebSocket
+    @memberOf   WebSocket#
 */
 
 /**
-    Event fired when the WebSocket connection opens.
+    OpenEvent handler property.
 
     @field
     @name       onopen
     @type       Function
-    @memberOf   WebSocket
-    @param  {OpenEvent}    event fired when the WebSocket connection opens
+    @memberOf   WebSocket#
 */
+
+/**
+    ErrorEvent handler property.
+
+    @field
+    @name       onerror
+    @type       Function
+    @memberOf   WebSocket#
+*/
+
+/**
+    CloseEvent handler property.
+    See <a href="./CloseEvent.html">CloseEvent</a>.
+
+    @field
+    @name       onclose
+    @type       Function
+    @memberOf   WebSocket#
+*/
+
+// Events
 
 /**
     Event fired when a WebSocket message arrives.
@@ -12021,7 +12082,7 @@ var HttpRedirectPolicy = Kaazing.Gateway.HttpRedirectPolicy;
 
     @event
     @name       message
-    @memberOf   WebSocket
+    @memberOf   WebSocket#
 */
 
 /**
@@ -12029,16 +12090,7 @@ var HttpRedirectPolicy = Kaazing.Gateway.HttpRedirectPolicy;
 
     @event
     @name       open
-    @memberOf   WebSocket
-*/
-
-/**
-    ErrorEvent handler property.
-
-    @field
-    @name       onerror
-    @type       Function
-    @memberOf   WebSocket
+    @memberOf   WebSocket#
 */
 
 /**
@@ -12046,17 +12098,7 @@ var HttpRedirectPolicy = Kaazing.Gateway.HttpRedirectPolicy;
 
     @event
     @name       error
-    @memberOf   WebSocket
-*/
-
-/**
-    CloseEvent handler property.
-    See <a href="./CloseEvent.html">CloseEvent</a>.
-
-    @field
-    @name       onclose
-    @type       Function
-    @memberOf   WebSocket
+    @memberOf   WebSocket#
 */
 
 /**
@@ -12065,7 +12107,7 @@ var HttpRedirectPolicy = Kaazing.Gateway.HttpRedirectPolicy;
 
     @event
     @name       close
-    @memberOf   WebSocket
+    @memberOf   WebSocket#
 */
 
 (function($rootModule, $module) {
@@ -12619,13 +12661,18 @@ var WebSocket = $module.WebSocket;
           Gets the specified extension from the list of registered extensions. A null is
           returned if no extension with the specified name has been registered for this factory. 
           
+          Ignore for time being as we should figure out our extension strategy before exposing
+          anything publicly.
+ 
+          @ignore
+
           @name getExtension
           @param name {String} extension name
           @return {WebSocketExtension}  the registered extension with the specified name
 
           @public
           @function
-          @memberOf WebSocketFactory
+          @memberOf WebSocketFactory#
          */
         $prototype.getExtension = function(name) {
             return this.extensions[name];
@@ -12639,6 +12686,10 @@ var WebSocket = $module.WebSocket;
           instance using <code>WebSocket.extensions</code> property after the connection has 
           been established. 
           <p>
+          Ignore for time being as we should figure out our extension strategy before exposing
+          anything publicly.
+ 
+          @ignore
           @name setExtension
           @param extension  {WebSocketExtension} extension to be inherited by all the WebSockets 
                                                  created using this factory
@@ -12646,7 +12697,7 @@ var WebSocket = $module.WebSocket;
 
           @public
           @function
-          @memberOf WebSocketFactory         
+          @memberOf WebSocketFactory#
          */
         $prototype.setExtension = function(extension) {
             this.extensions[extension.name] = extension;
@@ -12665,7 +12716,7 @@ var WebSocket = $module.WebSocket;
 
           @public
           @function
-          @memberOf WebSocketFactory
+          @memberOf WebSocketFactory#
          */
         $prototype.setChallengeHandler = function(challengeHandler) {
             if (typeof(challengeHandler) == "undefined") {
@@ -12686,7 +12737,7 @@ var WebSocket = $module.WebSocket;
                     
           @public
           @function
-          @memberOf WebSocketFactory
+          @memberOf WebSocketFactory#
          */
         $prototype.getChallengeHandler = function() {
             return this.challengeHandler || null;
@@ -12714,7 +12765,7 @@ var WebSocket = $module.WebSocket;
       
           @public
           @function
-          @memberOf WebSocketFactory
+          @memberOf WebSocketFactory#
         */
        $prototype.createWebSocket = function(url, protocols) {
            var ext = [];
@@ -12745,7 +12796,7 @@ var WebSocket = $module.WebSocket;
 
          @public
          @function
-         @memberOf WebSocketFactory
+         @memberOf WebSocketFactory#
          */
         $prototype.setDefaultConnectTimeout = function(connectTimeout) {
             if (typeof(connectTimeout) == "undefined") {
@@ -12775,7 +12826,7 @@ var WebSocket = $module.WebSocket;
                     
           @public
           @function
-          @memberOf WebSocketFactory
+          @memberOf WebSocketFactory#
          */
         $prototype.getDefaultConnectTimeout = function() {
             return this.connectTimeout || 0;
@@ -12792,7 +12843,7 @@ var WebSocket = $module.WebSocket;
 
           @public
           @function
-          @memberOf WebSocketFactory
+          @memberOf WebSocketFactory#
         */
         $prototype.setDefaultRedirectPolicy = function(redirectPolicy) {
             if (typeof(redirectPolicy) == "undefined") {
@@ -12817,7 +12868,7 @@ var WebSocket = $module.WebSocket;
 
           @public
           @function
-          @memberOf WebSocketFactory
+          @memberOf WebSocketFactory#
         */
         $prototype.getDefaultRedirectPolicy = function() {
             return this.redirectPolicy;
