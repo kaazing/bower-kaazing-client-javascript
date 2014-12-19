@@ -1,6 +1,6 @@
 {
     "name": "kaazing-client-javascript",
-    "version": "5.0.0-51",
+    "version": "5.0.0-52",
     "ignore": [],
     "dependencies": {}
 }
